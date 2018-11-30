@@ -1,0 +1,599 @@
+<html>
+<meta charset="utf-8">
+<head>
+<title>MoVis</title>
+<link rel="stylesheet" href="d3.slider.css" /> 
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.18/css/dataTables.jqueryui.min.css" />
+<style>
+body {
+  font-family: Verdana,Arial,sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+button {
+  position: absolute;
+  right: 30px;
+  top: 30px;
+}
+
+.dot {
+  stroke: #000;
+}
+dot.hidden {
+  fill: #ccc !important;
+}
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+.tooltip {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events: none;
+}
+	 h2 {
+      font-size: 1.2em;
+      margin: 60px 0 5px 0;
+    }
+    .wrapper {
+      width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .wrapper > div {
+      margin: 35px 0;
+    }
+   
+</style>
+</head>
+<body>
+<button>Reset</button>
+<div id="scatterplot"></div>
+<div class="wrapper">
+
+		<h2>Slider with min, max and step values</h2>
+		<code>d3.slider().axis(true).min(2000).max(2100).step(1)</code>
+		<div id="slider7"></div>
+	
+
+	<!-- <h2>Range Slider with event, values: <span id="slider3textmin">10</span>, <span id="slider3textmax">25</span></h2>
+    <code>d3.select('#slider3').call(d3.slider().axis(true).value( [ 10, 25 ] ).on("slide", function(evt, value) {<br>
+    &nbsp;&nbsp;d3.select('#slider3textmin').text(value[ 0 ]);<br />
+    &nbsp;&nbsp;d3.select('#slider3textmax').text(value[ 1 ]);<br>
+    })</code>
+    <div id="slider3"></div> -->
+
+ <table id="movietable" class="display" width="100%"></table>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3.slider.js"></script>
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+
+<script>
+var margin = {top: 20, right: 20, bottom: 150, left: 40},
+margin2 = {top: 480, right: 10, bottom: 20, left: 40},
+    width = 1200 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+	height2= 600 - margin2.top - margin2.bottom;
+	//parse the date/time
+	var parseDate = d3.time.format("%d-%b-%y").parse;
+	//var parseDate = d3.time.format("%m/%y").parse;
+	//range of runtime filter 
+	var runtime_min = 0;
+	var runtime_max = 250;
+	//movie table data
+	var dataSet = [];
+	//genre histogram data
+	var genre_data = [];
+	
+	//genre filter
+	var genrename = "";
+	var brush_extent = [[ 1, 10],[ 1, 10]];
+/* 
+ * value accessor - returns the value to encode for a given data object.
+ * scale - maps value to a visual display encoding, such as a pixel position.
+ * map function - maps from data value to display value
+ * axis - sets up axis
+ */ 
+
+	// setup x 
+	var xValue = function(d) { 
+		console.log(d.num)
+
+		return d.num;}, // data -> value
+	
+    xScale = d3.time.scale().range([0,width-100]);
+    xMap = function(d) { return xScale(xValue(d));}, // data -> display
+    xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickPadding(6);
+
+	// setup y
+	var yValue = function(d) { return d.rate;}, // data -> value
+    yScale = d3.scale.linear().range([height, 0]), // value -> display
+    yMap = function(d) { return yScale(yValue(d));}, // data -> display
+    yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+    // setup fill color
+	var cValue = function(d) { return d.genre;},
+    color = d3.scale.category10();
+	
+	var dot;
+	var histo;
+
+    var zoom = d3.behavior.zoom()
+    .x(xScale)
+    .y(yScale)
+    .scaleExtent([1,10])
+    .on("zoom",zoomed);
+
+
+	var brush = d3.svg.brush()
+      .x(xScale)
+      .y(yScale)
+      .on("brush", brushmove)
+      .on("brushend", brushend);
+
+	d3.select("button").on("click", reset);
+	function reset() {
+		//reset all the filter parameters
+		runtime_min = 0;
+		runtime_max = 250;
+		genrename = "";
+		brush_extent = [[ 1, 10],[ 100, 10]];
+		
+		scatterplot.call(zoom
+			.x(xScale.domain([0, 60]))
+			.y(yScale.domain([0, 5]))
+			.event);
+			
+		dot.style("opacity", 1);
+		
+		detail_table.draw();
+	
+	}
+	
+    function zoomed(){
+      svg.select("g.x.axis").call(xAxis);
+      svg.select("g.y.axis").call(yAxis);
+      scatterplot.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    }
+
+	var goValue=0;
+	
+   function filter_scatterplot(){
+
+	   	// scaler=()/250
+		// size=1+10*scaler
+		// size=size.toString()
+		if(genrename == ""){
+// 			dot
+// 			.filter(function(d) { return d.runtime >= runtime_min && d.runtime <= runtime_max &&
+								
+// 								(brush_extent[0][1] <= d.rate && d.rate <= brush_extent[1][1]&&
+// 								brush_extent[0][0] <= d.ReleaseDate && d.ReleaseDate <= brush_extent[1][0] )
+								
+// 								; })
+// 			.style("opacity", 1)
+// 			.attr("r", "20px")
+
+// ;
+			
+
+			dot
+			.filter(function(d) { return d.runtime >= runtime_min && d.runtime <= runtime_max && 
+								
+								(brush_extent[0][1] > d.rate || d.rate > brush_extent[1][1] ||
+								brush_extent[0][0] > d.ReleaseDate || d.ReleaseDate > brush_extent[1][0]); })
+			.style("opacity", .5)
+			.attr("r", function(d){	
+				
+				if(goValue<10){
+					r=d["1995"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=10&goValue<20){
+					r=d["1996"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=20&goValue<30){
+					r=d["1997"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=30&goValue<40){
+					r=d["1998"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=40&goValue<50){
+					r=d["1999"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=50&goValue<60){
+					r=d["2000"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=60&goValue<70){
+					r=d["2001"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=70&goValue<80){
+					r=d["2002"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=80&goValue<90){
+					r=d["2003"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=90&goValue<100){
+					r=d["2004"]
+					k=r.toString()
+						return k+"px";
+				}
+				else if(goValue>=100&goValue<110){
+					r=d["2005"]
+					k=r.toString()
+						return k+"px";
+				}else if(goValue>=110&goValue<260){
+					r=d["2018"]
+					k=r.toString()
+						return k+"px";
+				}
+				else{
+						return "3px";
+				}
+				// if(d.boxoffice>50000000){
+				// 		return "9px";
+				// }
+				// else if(d.boxoffice>5000000){
+				// 		return "6px";
+				// }
+				// else{
+				// 		return "3px";
+				// }
+			})
+			// dot
+			// .filter(function(d) { return d.runtime < runtime_min || d.runtime > runtime_max  
+										
+			// 						; })
+			// .style("opacity", 0);
+
+
+			// histo.selectAll("rect")
+			// .attr("y", function(d) { 
+			// 	console.log(goValue)
+			//  return height2-10 - (goValue+d.rate); })
+			// .attr("height", function(d){
+			// 	return (goValue+d.rate);
+				
+			// })
+			
+			;
+		}
+		else{
+			dot
+			.filter(function(d) { return d.runtime >= runtime_min && d.runtime <= runtime_max &&
+								d.genre == genrename &&
+								(brush_extent[0][1] <= d.rate && d.rate <= brush_extent[1][1]&&
+								brush_extent[0][0] <= d.ReleaseDate && d.ReleaseDate <= brush_extent[1][0] )
+								
+								; })
+			.style("opacity", 1)
+			
+			;
+			dot
+			.filter(function(d) { return d.runtime >= runtime_min && d.runtime <= runtime_max && 
+								d.genre == genrename &&
+								(brush_extent[0][1] > d.rate || d.rate > brush_extent[1][1] ||
+								brush_extent[0][0] > d.ReleaseDate || d.ReleaseDate > brush_extent[1][0]); })
+			.style("opacity", .5)
+			.attr("r", "50px");
+			;
+			dot
+			.filter(function(d) { return d.runtime < runtime_min || d.runtime > runtime_max || 
+										d.genre != genrename
+									; })
+			.style("opacity", 0)
+			.attr("r", "50px");
+		}
+   }
+   
+   $.fn.dataTable.ext.search.push(
+		function( settings, data, dataIndex ) {
+			var rate = data[1];
+			var runtime =  data[3];
+			var ReleaseDate = parseDate(data[4]);
+			if(brush_extent[0][1]<10){
+				if ( runtime_min <= runtime && runtime <= runtime_max 
+					&&(brush_extent[0][1] <= rate && rate <= brush_extent[1][1]&&
+					brush_extent[0][0] <= ReleaseDate && ReleaseDate <= brush_extent[1][0] )
+				)
+				{
+					return true;
+				}
+				return false;
+			}
+			else{
+				if ( runtime_min <= runtime && runtime <= runtime_max  )
+				
+				{
+					return true;
+				}
+				return false;
+			}
+		}
+	);
+
+  // Highlight the selected circles.
+  function brushmove(d) {
+   brush_extent = brush.extent();
+   filter_scatterplot(); 
+   detail_table.draw();
+  }
+
+  // If the brush is empty, select all circles.
+  function brushend() {
+  if (!d3.event.sourceEvent) return; 
+    if (brush.empty()){
+	 brush_extent = [[ 1, 10],[ 100, 10]];
+	 filter_scatterplot(); 
+	 detail_table.draw();
+	}
+  }
+	
+	
+	// add the graph canvas to the body of the webpage
+	var svg = d3.select("#scatterplot").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    
+	;
+	var scatterplot = svg.append("g")
+    .attr("class", "scatterplot")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	//.call(zoom)
+	;
+	
+	var genrehistogram = svg.append("g")
+    .attr("class", "genrehistogram")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+	
+	scatterplot.append("g")
+    .attr("class", "brush")
+    .call(brush);
+	
+    var rect = scatterplot.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .style("fill", "none")
+    //.style("pointer-events", "all");
+
+	// add the tooltip area to the webpage
+	var tooltip = d3.select("#scatterplot").append("svg")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+// load data
+d3.csv("test.csv", function(error, data) {
+
+  // change string (from CSV) into number format
+  data.forEach(function(d) {
+    d.rate = +d.rate;
+    d.year = +d.year;
+    d.num = d.num;
+	d.ReleaseDate = parseDate(d.ReleaseDate);
+	d.boxoffice = +d.boxoffice;
+	d.runtime = +d.runtime;
+	dataSet.push( [d.name,  d.rate, d.boxoffice, d.runtime, d.date, d.genre + d.genre1 + d.genre2 + d.genre3 + d.genre4 + d.genre5 + d.genre6, d.id]);
+    genre_data.push(d.runtime);
+  
+  });
+
+
+  // don't want dots overlapping axis, so add in buffer to data domain
+
+	xScale.domain([0, 60]);
+	yScale.domain([0, 5]);
+
+  // x-axis
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width-50)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Release Date");
+
+  // y-axis
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Rate");
+
+  // draw dots
+  dot = scatterplot.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+	
+      //.attr("class", "dot")
+      .attr("r", function(d){
+		  if(d.boxoffice>50000000){
+				return "9px";
+		  }
+		  else if(d.boxoffice>5000000){
+				return "6px";
+		  }
+		  else{
+				return "3px";
+		  }
+	  })
+      .attr("cx", xMap)
+      .attr("cy", yMap)	  
+      .style("fill", function(d) { return color(cValue(d));}) 
+	  .style("opacity", .5)
+      .on("mouseover", function(d) {
+          tooltip.transition()
+               .duration(200)
+               .style("opacity", .9);
+          tooltip.html(d["name"] + "<br/> (" + xValue(d) 
+          + ", " + yValue(d) + ")")
+               .style("left", (d3.event.pageX + 5) + "px")
+               .style("top", (d3.event.pageY - 28) + "px");
+      })
+      .on("mouseout", function(d) {
+          tooltip.transition()
+               .duration(500)
+               .style("opacity", 0);
+      })
+	  .on("click", function(d){
+						
+			//window.open ('SingleMoviePage.html','newwindow','height=600,width=800,top=300, left=400, toolbar=no, menubar=no, scrollbars=yes, resizable=yes, location=no, status=no') 
+
+			var movie_object = new Object();
+			movie_object.name = d.name;
+			movie_object.date = d.ReleaseDate;
+			movie_object.boxoffice = d.boxoffice;
+			movie_object.runtime = d.runtime;
+			movie_object.imdb = d.imdb;
+			window.showModalDialog("SingleMoviePage.html", movie_object, "dialogHeight:500px; dialogLeft:500px;"); 
+	});
+ 
+	
+				
+	//show the histogram of genre
+	var genre_his_data = [];
+	var rect_step = width/color.domain().length-3;
+	var heights = [];
+	for(var i = 0;i < color.domain().length; i++){
+		genre_his_data.push({x: color.domain()[i], y: 10*i+100});
+		heights.push( genre_his_data[i].y );
+	}
+	var yScale_his = d3.scale.linear()
+						.domain([0,d3.max(heights)])
+						.range([0,height2-20]);
+	
+	//绘制矩形
+	histo = genrehistogram.selectAll(".bar")
+    .data(genre_his_data)
+	.enter().append("g")
+    .attr("class", "bar")
+    .attr("transform", function(d, i) { 
+			return "translate(" + i * rect_step + "," + 0 + ")"; });
+	//绘制坐标轴的直线
+	genrehistogram.append("line")
+			.attr("stroke","black")
+			.attr("stroke-width","1px")
+			.attr("x1",0)
+			.attr("y1",height2-20)
+			.attr("x2",genre_his_data.length * rect_step)
+			.attr("y2",height2-20);
+			
+	histo.append("rect")
+			.attr("x", 1)
+			.attr("y", function(d) { 
+			 return height2-20 - 5; })
+			.attr("width", function(d,i){
+				return rect_step - 2; 
+			})
+			.attr("height", function(d){
+				return 5;
+			})
+			.attr("fill", function(d){return color(d.x);})
+			/* .on("mouseover", function(d) {
+				dot
+				.filter(function(d) { return d.genre == d.x; })
+				.style("opacity", 1);
+				dot
+				.filter(function(d) { return d.genre != d.x; })
+				.style("opacity", .5);
+			})
+			.on("mouseout", function(d) {
+				filter_scatterplot();
+			;
+			})*/
+			.on("click", function(d){
+				genrename = d.x;
+				filter_scatterplot(); 
+	  });
+	
+	//绘制文字
+	histo.append("text")
+			.attr("font-size","10px")
+			.attr("x", 0)
+			.attr("y", height2-20)
+			.attr("dx",rect_step/2 - 8)
+			.attr("dy","15px")
+			.attr('transform', 'rotate(15)')
+			.text(function(d){
+				return d.x;
+			});
+
+
+//  d3.select('#slider7').call(d3.slider().axis(true).min(1995).max(2018).step(1));
+
+
+var timeSlider=  d3.select('#slider7').call(d3.slider().axis(true).min(1995).max(2018).step(1));
+
+timeSlider.call(d3.slider().on("slide", function(evt, value) {
+  // `value` is the percentage travelled on the slider
+  // Selected year will therefore be value * (max - min) + min
+  var year = value/100;
+  goValue=year*250;
+	filter_scatterplot(); 
+  console.log("The slider's current value is:" + goValue);
+}));
+	
+
+	// $(document).ready(function() {
+    // detail_table = $('#movietable').DataTable( {
+    //     data: dataSet,
+    //     columns: [
+    //         { title: "Name" },
+    //         { title: "Rate" },
+	// 		{ title: "Boxoffice" },
+    //         { title: "Runtime" },
+    //         { title: "Release Date" },
+    //         { title: "Genre" }
+    //     ]
+	// });
+	//   $('#movietable')
+    //     .on( 'mouseenter', 'td', function () {
+    //         var colIdx = detail_table.cell(this).index().row;
+	// 		console.log(colIdx);
+    //         //$( detail_table.column( colIdx ).nodes() ).addClass( 'highlight' );
+    //     } );
+		
+	// });
+	
+	
+});
+
+</script>
+</body>
+</html>
