@@ -8,7 +8,11 @@
 </head>
 <body>
     <h1>Movie Rate and Popularity</h1>
-    <label><input id="Adventure" type="checkbox">Adventure</label>
+    <label><id3.select(this)
+                        .transition()
+                        .duration(500)
+                        .attr('r',3)
+                        .attr('stroke-width',1)nput id="Adventure" type="checkbox">Adventure</label>
     <label><input id="Comedy" type="checkbox">Comedy</label>
     <label><input id="Action" type="checkbox">Action</label>
     <label><input id="Mystery" type="checkbox">Mystery</label>
@@ -46,6 +50,11 @@
             var ySelection = "Rate";
             var timeSelection = "Most recent"
             var id;
+            var div = d3.select("body")
+                        .append("div")
+                        .attr("class", "tooltip")
+                        .style("opacity", 0)
+
             d3.csv("movies_rate.csv", function(data) {
                 
                 data.forEach(function (d) {
@@ -165,6 +174,13 @@
                             .attr('r',6)
                             .attr('stroke-width',1.5)
                             console.log(d["Year"])
+
+                            div.transition()
+                                .duration(200)
+                                .style("opacity", 0.9);
+                            div.html(d["Name"] + " (" + d["Year"] +")<br>" +  d["Genre"] + "<br>" + d["Rate"] + "<br>")
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY) + "px")
                         }
                         
                     })
@@ -175,6 +191,10 @@
                             .duration(500)
                             .attr('r',3)
                             .attr('stroke-width',1)
+                            
+                            div.transition()
+                                .duration(500)
+                                .style("opacity", 0)
                         }
                 
                     })
@@ -208,42 +228,42 @@
 
                 var time_category = ["Most recent", "2000s", "Classic 1900s"]
                 
-                var x_menu = d3.select("body")
-                            .append("left-div")
-                            .attr("id", "menu");
-                var x_text = x_menu.append('span')
-                                .text("Select X-Axis variable");
-                var x_options = x_menu.append('select')
-                                    .attr('id', 'options')
-                                    .on('change', changeX)
-                                    .selectAll('option')
-                                    .data(variable)
-                                    .enter()
-                                    .append('option')
-                                    .attr('value', function(d) {
-                                        return d;
-                                    })
-                                    .text(function(d) {
-                                        return d;
-                                    });
-                var y_menu = d3.select("body")
-                            .append("right-div")
-                            .attr("id", "menu");
-                var y_text = y_menu.append('span')
-                                .text("Select Y-Axis variable");
-                var y_options = y_menu.append('select')
-                                    .attr('id', 'options')
-                                    .on('change', changeY)
-                                    .selectAll('option')
-                                    .data(variable)
-                                    .enter()
-                                    .append('option')
-                                    .attr('value', function(d) {
-                                        return d;
-                                    })
-                                    .text(function(d) {
-                                        return d;
-                                    });    
+                // var x_menu = d3.select("body")
+                //             .append("left-div")
+                //             .attr("id", "menu");
+                // var x_text = x_menu.append('span')
+                //                 .text("Select X-Axis variable");
+                // var x_options = x_menu.append('select')
+                //                     .attr('id', 'options')
+                //                     .on('change', changeX)
+                //                     .selectAll('option')
+                //                     .data(variable)
+                //                     .enter()
+                //                     .append('option')
+                //                     .attr('value', function(d) {
+                //                         return d;
+                //                     })
+                //                     .text(function(d) {
+                //                         return d;
+                //                     });
+                // var y_menu = d3.select("body")
+                //             .append("right-div")
+                //             .attr("id", "menu");
+                // var y_text = y_menu.append('span')
+                //                 .text("Select Y-Axis variable");
+                // var y_options = y_menu.append('select')
+                //                     .attr('id', 'options')
+                //                     .on('change', changeY)
+                //                     .selectAll('option')
+                //                     .data(variable)
+                //                     .enter()
+                //                     .append('option')
+                //                     .attr('value', function(d) {
+                //                         return d;
+                //                     })
+                //                     .text(function(d) {
+                //                         return d;
+                //                     });    
 
                 var time_menu = d3.select("body")
                                     .append("right-div")
@@ -265,108 +285,108 @@
                                         });
                                 
                 /*--- change y-axis ---*/
-                function changeY() {
-                    ySelection = this.value;
-                    yScale.domain([d3.min(data, function(d) {
-                        return parseFloat(d[ySelection])
-                    }),
-                    1.05 * d3.max(data,function(d) { 
-                        return parseFloat(d[ySelection]); 
-                        })
-                    ])
-                    yAxis.scale(yScale)
-                        .tickFormat(function(d) {
-                            if (ySelection.includes('Rate')) {
-                                return d3.format(".2f")(d * 100) + "%";
-                            } else if (ySelection.includes('mortaility')) {
-                                return d3.format(".2f")(d * 100) + "%";
-                            } else if (ySelection.includes("%")) {
-                                return d3.format(".2f")(d) + "%";
-                            } else {
-                                return d;
-                            }
-                        });
-                    d3.select('#yAxis')
-                        .transition()
-                        .duration(1000)
-                        .call(yAxis);
-                    d3.select('#yAxisLabel')
-                        .text(ySelection);
-                    d3.selectAll('.dot')
-                        .call(function() {
-                            var newZoombeh = d3.behavior.zoom()
-                                .x(xScale)
-                                .y(yScale)
-                                .scaleExtent([0.8, 5])
-                                .on("zoom", function(){
-                                    layer1.select("#xAxis").call(xAxis);
-                                    layer1.select("#yAxis").call(yAxis);
-                                    layer2.selectAll("circle")
-                                        .attr("transform", transform);
-                                });
-                            layer1.call(newZoombeh);
-                        })
-                        .transition()
-                        .duration(1000)
-                        // .delay(function(d, i) {
-                        //     return (i * 10);
-                        // })
-                        .attr('cy', function(d) {
-                            return yScale(parseFloat(d[ySelection]));
-                        });
-                }
-                function changeX() {
-                    xSelection = this.value;
-                    xScale.domain([d3.min(data, function(d) {
-                                return parseFloat(d[xSelection]);
-                            }),
-                    1.05 * d3.max(data,function (d) { 
-                        return parseFloat(d[xSelection]);
-                        })
-                    ])
-                    xAxis.scale(xScale)
-                        .tickFormat(function(d) {
-                            if (xSelection.includes('Rate')) {
-                                return d3.format(".2f")(d);
-                            } else if (xSelection.includes('mortaility')) {
-                                return d3.format(".2f")(d);
-                            } else if (xSelection.includes("%")) {
-                                return d3.format(".2f")(d);
-                            } else {
-                                return d;
-                            }
-                        });
+                // function changeY() {
+                //     ySelection = this.value;
+                //     yScale.domain([d3.min(data, function(d) {
+                //         return parseFloat(d[ySelection])
+                //     }),
+                //     1.05 * d3.max(data,function(d) { 
+                //         return parseFloat(d[ySelection]); 
+                //         })
+                //     ])
+                //     yAxis.scale(yScale)
+                //         .tickFormat(function(d) {
+                //             if (ySelection.includes('Rate')) {
+                //                 return d3.format(".2f")(d * 100) + "%";
+                //             } else if (ySelection.includes('mortaility')) {
+                //                 return d3.format(".2f")(d * 100) + "%";
+                //             } else if (ySelection.includes("%")) {
+                //                 return d3.format(".2f")(d) + "%";
+                //             } else {
+                //                 return d;
+                //             }
+                //         });
+                //     d3.select('#yAxis')
+                //         .transition()
+                //         .duration(1000)
+                //         .call(yAxis);
+                //     d3.select('#yAxisLabel')
+                //         .text(ySelection);
+                //     d3.selectAll('.dot')
+                //         .call(function() {
+                //             var newZoombeh = d3.behavior.zoom()
+                //                 .x(xScale)
+                //                 .y(yScale)
+                //                 .scaleExtent([0.8, 5])
+                //                 .on("zoom", function(){
+                //                     layer1.select("#xAxis").call(xAxis);
+                //                     layer1.select("#yAxis").call(yAxis);
+                //                     layer2.selectAll("circle")
+                //                         .attr("transform", transform);
+                //                 });
+                //             layer1.call(newZoombeh);
+                //         })
+                //         .transition()
+                //         .duration(1000)
+                //         // .delay(function(d, i) {
+                //         //     return (i * 10);
+                //         // })
+                //         .attr('cy', function(d) {
+                //             return yScale(parseFloat(d[ySelection]));
+                //         });
+                // }
+                // function changeX() {
+                //     xSelection = this.value;
+                //     xScale.domain([d3.min(data, function(d) {
+                //                 return parseFloat(d[xSelection]);
+                //             }),
+                //     1.05 * d3.max(data,function (d) { 
+                //         return parseFloat(d[xSelection]);
+                //         })
+                //     ])
+                //     xAxis.scale(xScale)
+                //         .tickFormat(function(d) {
+                //             if (xSelection.includes('Rate')) {
+                //                 return d3.format(".2f")(d);
+                //             } else if (xSelection.includes('mortaility')) {
+                //                 return d3.format(".2f")(d);
+                //             } else if (xSelection.includes("%")) {
+                //                 return d3.format(".2f")(d);
+                //             } else {
+                //                 return d;
+                //             }
+                //         });
                     
-                    d3.select('#xAxis')
-                        .transition()
-                        .duration(1000)
-                        .call(xAxis);
-                    d3.select('#xAxisLabel')
-                        .text(xSelection);
-                    d3.selectAll('circle')
-                        .transition()
-                        .duration(1000)
-                        // .delay(function(d, i) {
-                        //     return (i * 10);
-                        // })
-                        .attr('cx', function(d) {
-                            return xScale(parseFloat(d[xSelection]));
-                        })
-                        .call(function() {
-                            var newZoombeh = d3.behavior.zoom()
-                                .x(xScale)
-                                .y(yScale)
-                                .scaleExtent([0.8, 5])
-                                .on("zoom", function(){
-                                    layer1.select("#xAxis").call(xAxis);
-                                    layer1.select("#yAxis").call(yAxis);
-                                    layer2.selectAll("circle")
-                                        .attr("transform", transform);
-                                });
-                            layer1.call(newZoombeh);
-                        });
+                //     d3.select('#xAxis')
+                //         .transition()
+                //         .duration(1000)
+                //         .call(xAxis);
+                //     d3.select('#xAxisLabel')
+                //         .text(xSelection);
+                //     d3.selectAll('circle')
+                //         .transition()
+                //         .duration(1000)
+                //         // .delay(function(d, i) {
+                //         //     return (i * 10);
+                //         // })
+                //         .attr('cx', function(d) {
+                //             return xScale(parseFloat(d[xSelection]));
+                //         })
+                //         .call(function() {
+                //             var newZoombeh = d3.behavior.zoom()
+                //                 .x(xScale)
+                //                 .y(yScale)
+                //                 .scaleExtent([0.8, 5])
+                //                 .on("zoom", function(){
+                //                     layer1.select("#xAxis").call(xAxis);
+                //                     layer1.select("#yAxis").call(yAxis);
+                //                     layer2.selectAll("circle")
+                //                         .attr("transform", transform);
+                //                 });
+                //             layer1.call(newZoombeh);
+                //         });
                         
-                }
+                // }
                 function changeTime() {
                     // rerender();
                     timeSelection = this.value
