@@ -25,8 +25,7 @@
     <label><input id="Western" type="checkbox">Western</label>
     <label><input id="Musical" type="checkbox">Musical</label>
     <label><input id="Romance" type="checkbox">Romance</label>
-    <label><input id="War" type="checkbox">War</label>
-
+    <label><input id="War" type="checkbox">War</label><br>
     <div id="path">
         <script>
             var margin = {
@@ -35,28 +34,24 @@
                     left: 100,
                     right: 50
                 };
-
                 var width = 600;
                 var height = 400;
-
             var xScale = d3.scale.linear()
                             .range([0, width - margin.left - margin.right])
                             .nice();
-
             var yScale = d3.scale.linear()
                             .range([height - margin.bottom - margin.top, 0])
                             .nice();
-
             var xSelection = "Popularity";
             var ySelection = "Rate";
-
+            var timeSelection = "Most recent"
+            var id;
             d3.csv("movies_rate.csv", function(data) {
                 
                 data.forEach(function (d) {
                     d[xSelection] = parseFloat(d[xSelection]);
                     d[ySelection] = parseFloat(d[ySelection]);
                 });
-
                 /*--- Create layers ---*/
                 var layer1 = d3.select("#path")
                             .append("svg")
@@ -68,12 +63,10 @@
                                 .append("svg")
                                 .attr("width", width)
                                 .attr("height", height);
-
                 /*--- Set the scales ---*/
                 xScale.domain([0, 1.05 * d3.max(data, function(d) {
                                         return d[xSelection];
                                     })]);
-
                 var xAxis = d3.svg.axis()
                                 // .scale(xScale)
                                 .orient("bottom")
@@ -90,7 +83,6 @@
                                     }
                                 });
                 xAxis.scale(xScale);    
-
                 yScale.domain([0, 1.05 * d3.max(data, function(d) {
                                         return d[ySelection];
                                     })]);
@@ -118,7 +110,6 @@
                                  .y(yScale)
                                 .scaleExtent([0.8, 5])
                                 .on("zoom", zoom);   
-
                 /*--- Assemble axes into figures ---*/
                 layer1.append('g')
                    .attr('class', 'x axis')
@@ -130,7 +121,6 @@
                    .attr("x", width - margin.right)
                    .attr("text-anchor", "end")
                    .text(xSelection);
-
                 layer1.append('g')
                    .attr('class', 'y axis')
                    .attr('id', 'yAxis')
@@ -145,20 +135,18 @@
                 
                 layer1.call(zoomBeh);
                 layer2.call(zoomBeh);    
-
                 /*--- Draw the dots ---*/
                 var genre = function(d) {
                     return d["Genre_1"];
                 }
-
                 var color = d3.scale.category10();
-
                 var dots = layer2.selectAll(".dot")
                     .data(data)
                     .enter()
                     .append("circle")
                     .attr("class", "dot")
                     .attr("r", 3)
+                    .attr("stroke", "black")
                     .attr("cx", function(d) {
                         d.display = 1;
                         return xScale(d[xSelection]);
@@ -169,19 +157,26 @@
                     .style("fill", function(d) {
                         return color(genre(d));
                     })
-                    .on('mouseover', function () {
-                        d3.select(this)
-                        .transition()
-                        .duration(500)
-                        .attr('r',6)
-                        .attr('stroke-width',3)
+                    .on('mouseover', function (d) {
+                        if (d.display === 1) {
+                            d3.select(this)
+                            .transition()
+                            .duration(500)
+                            .attr('r',6)
+                            .attr('stroke-width',1.5)
+                            console.log(d["Year"])
+                        }
+                        
                     })
-                    .on('mouseout', function () {
-                        d3.select(this)
-                        .transition()
-                        .duration(500)
-                        .attr('r',3)
-                        .attr('stroke-width',1)
+                    .on('mouseout', function (d) {
+                        if (d.display === 1) {
+                            d3.select(this)
+                            .transition()
+                            .duration(500)
+                            .attr('r',3)
+                            .attr('stroke-width',1)
+                        }
+                
                     })
                     // .attr("transform", transform);
                 
@@ -209,7 +204,9 @@
                       });
                       
                 /*--- create menu ---*/
-                var variable = ["Popularity", "Rate", "Year"];
+                var variable = ["Popularity", "Rate"];
+
+                var time_category = ["Most recent", "2000s", "Classic 1900s"]
                 
                 var x_menu = d3.select("body")
                             .append("left-div")
@@ -229,7 +226,6 @@
                                     .text(function(d) {
                                         return d;
                                     });
-
                 var y_menu = d3.select("body")
                             .append("right-div")
                             .attr("id", "menu");
@@ -247,8 +243,27 @@
                                     })
                                     .text(function(d) {
                                         return d;
-                                    });
+                                    });    
 
+                var time_menu = d3.select("body")
+                                    .append("right-div")
+                                    .attr("id", "timeMenu")
+                var time_text = time_menu.append("span")
+                                        .text("Release Date")
+                var time_options = time_menu.append('select')
+                                        .attr("id", 'time_options')
+                                        .on('change', changeTime)
+                                        .selectAll('option')
+                                        .data(time_category)
+                                        .enter()
+                                        .append('option')
+                                        .attr('value', function(d) {
+                                            return d;
+                                        })
+                                        .text(function(d) {
+                                            return d;
+                                        });
+                                
                 /*--- change y-axis ---*/
                 function changeY() {
                     ySelection = this.value;
@@ -300,7 +315,6 @@
                             return yScale(parseFloat(d[ySelection]));
                         });
                 }
-
                 function changeX() {
                     xSelection = this.value;
                     xScale.domain([d3.min(data, function(d) {
@@ -353,7 +367,47 @@
                         });
                         
                 }
-
+                function changeTime() {
+                    // rerender();
+                    timeSelection = this.value
+                    console.log(timeSelection);
+                    var start_y;
+                    var end_y;
+                    if (timeSelection === 'Most recent') {
+                        start_y = 2010;
+                        end_y = 2018;
+                    } else if (timeSelection === '2000s') {
+                        start_y = 2000;
+                        end_y = 2009;
+                    } else if (timeSelection === 'Classic 1900s') {
+                        start_y = 1900;
+                        end_y = 1999; 
+                    } 
+                    // console.log(this)
+                    d3.selectAll(".dot")
+                        .filter(function(d) {
+                            // console.log(d['Year']);
+                            // console.log(parseFloat(d["Year"]) > end_y && parseFloat(d["Year"]) < start_y)
+                            return (parseFloat(d["Year"]) > end_y || parseFloat(d["Year"]) < start_y)
+                        })
+                        .attr("r", function(d) {
+                            // console.log(d['Year'])
+                            d.display = 0;
+                            return 0;
+                        })
+                    d3.selectAll(".dot")
+                        .filter(function(d) {
+                            if (d["Genre_1"] == id) {
+                                return (parseFloat(d["Year"]) <= end_y && parseFloat(d["Year"]) >= start_y)
+                            }
+                            return false;
+                        })
+                        .attr("r", function(d) {
+                            // console.log(d['Year'])
+                            d.display = 1;
+                            return 3;
+                        })
+                }
                 //checkbox operations
                 var genres_display = new Array();
                 d3.select("#Adventure").on("change",update);
@@ -374,16 +428,11 @@
                 d3.select("#Musical").on("change",update);
                 d3.select("#Romance").on("change",update);
                 d3.select("#War").on("change",update);
-
                 
-                d3.selectAll(".dot")
-                .attr("r", function(d){
-                    d.display = 0;
-                    return 0;
-                })
-
+                rerender();
+                
                 function update(){ 
-                    var id = this.id
+                    id = this.id
                     if(this.checked ){
                         console.log(this)
                         d3.selectAll(".dot")
@@ -395,7 +444,6 @@
                                 d.display = 1;
                                 return 3;
                             }) 
-
                     }
                     else{
                         d3.selectAll(".dot")
@@ -407,12 +455,9 @@
                                 d.display = 0;
                                 return 0;
                             })
-
                     }
                     
                 }
-
-
                 function zoom() {
                     layer1.select("#xAxis")
                             .call(xAxis);
@@ -422,13 +467,20 @@
                     layer2.selectAll(".dot")
                         .attr("transform", transform);
                 }
-
                 function transform(d) {
                     return "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")";
-            }
+                }
 
+                function rerender() {
+                    d3.selectAll(".dot")
+                        .attr("r", function(d){
+                                d.display = 0;
+                                return 0;
+                            })
+                }
             });
         </script>
     </div>
+
 </body>
 </html>>
