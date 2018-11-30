@@ -8,11 +8,7 @@
 </head>
 <body>
     <h1>Movie Rate and Popularity</h1>
-    <label><id3.select(this)
-                        .transition()
-                        .duration(500)
-                        .attr('r',3)
-                        .attr('stroke-width',1)nput id="Adventure" type="checkbox">Adventure</label>
+    <label><input id="Adventure" type="checkbox">Adventure</label>
     <label><input id="Comedy" type="checkbox">Comedy</label>
     <label><input id="Action" type="checkbox">Action</label>
     <label><input id="Mystery" type="checkbox">Mystery</label>
@@ -40,6 +36,8 @@
                 };
                 var width = 600;
                 var height = 400;
+
+                
             var xScale = d3.scale.linear()
                             .range([0, width - margin.left - margin.right])
                             .nice();
@@ -49,11 +47,22 @@
             var xSelection = "Popularity";
             var ySelection = "Rate";
             var timeSelection = "Most recent"
+            var time_menu = d3.select("#path")
+                                    .append("g")
+                                    .attr("id", "timeMenu")
             var id;
-            var div = d3.select("body")
+            var div = d3.select("#path")
                         .append("div")
                         .attr("class", "tooltip")
                         .style("opacity", 0)
+
+            var isClicked = false;
+
+            // var svg2 = d3.select("body")
+            //             .append("svg")
+            //             .attr("class","svg")
+            //             .attr("width", 100)
+            //             .attr("height", 100)
 
             d3.csv("movies_rate.csv", function(data) {
                 
@@ -61,6 +70,27 @@
                     d[xSelection] = parseFloat(d[xSelection]);
                     d[ySelection] = parseFloat(d[ySelection]);
                 });
+
+                /*--- create menu ---*/
+                var time_category = ["Most recent", "2000s", "Classic 1900s"]
+                
+                var time_text = time_menu.append("span")
+                                        .text("Release Date")
+                var time_options = time_menu.append('select')
+                                        .attr("id", 'time_options')
+                                        .on('change', changeTime)
+                                        .selectAll('option')
+                                        .data(time_category)
+                                        .enter()
+                                        .append('option')
+                                        .attr('value', function(d) {
+                                            return d;
+                                        })
+                                        .text(function(d) {
+                                            return d;
+                                        });
+                time_menu.append('br')
+                
                 /*--- Create layers ---*/
                 var layer1 = d3.select("#path")
                             .append("svg")
@@ -72,45 +102,30 @@
                                 .append("svg")
                                 .attr("width", width)
                                 .attr("height", height);
+                // var svg2 = d3.select("#path2")
+                //         svg2.append("circle")
+                //             .attr("cx", 100)
+                //             .attr("cy", 100)
+                //             .attr("r", 90)
+                //             .attr("fill", "blue")
                 /*--- Set the scales ---*/
-                xScale.domain([0, 1.05 * d3.max(data, function(d) {
+                xScale.domain([0, d3.max(data, function(d) {
                                         return d[xSelection];
                                     })]);
-                var xAxis = d3.svg.axis()
-                                // .scale(xScale)
-                                .orient("bottom")
-                                .ticks(5)
-                                .tickFormat(function(d) {
-                                    if (xSelection.includes('Rate')) {
-                                        return d3.format(".2f")(d * 100) + "%";
-                                    } else if (xSelection.includes('mortaility')) {
-                                        return d3.format(".2f")(d * 100) + "%";
-                                    } else if (xSelection.includes("%")) {
-                                        return d3.format(".2f")(d) + "%";
-                                    } else {
-                                        return d;
-                                    }
-                                });
-                xAxis.scale(xScale);    
-                yScale.domain([0, 1.05 * d3.max(data, function(d) {
+                yScale.domain([0, d3.max(data, function(d) {
                                         return d[ySelection];
                                     })]);
-                            
+                // X-Axis
+                var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .ticks(5)
+                    .orient('bottom')
+
+                // Y-axis
                 var yAxis = d3.svg.axis()
-                                // .scale(yScale)
-                                .orient("left")
-                                .ticks(5)
-                                .tickFormat(function(d) {
-                                    if (ySelection.includes('Rate')) {
-                                        return d3.format(".2f")(d);
-                                    } else if (ySelection.includes('mortaility')) {
-                                        return d3.format(".2f")(d);
-                                    } else if (ySelection.includes("%")) {
-                                        return d3.format(".2f")(d);
-                                    } else {
-                                        return d;
-                                    }
-                                });
+                    .scale(yScale)
+                    .ticks(5)
+                    .orient('left')
                                 
                 yAxis.scale(yScale);
                 /*--- create zoom ---*/
@@ -128,12 +143,13 @@
                    .append("text")
                    .attr('id', 'xAxisLabel')
                    .attr("x", width - margin.right)
+                   .attr("y", -10)
                    .attr("text-anchor", "end")
                    .text(xSelection);
                 layer1.append('g')
                    .attr('class', 'y axis')
                    .attr('id', 'yAxis')
-                   .attr('transform', 'translate(' + margin.left + ',' + margin.bottom + ")")
+                   .attr('transform', 'translate(' + margin.left + ',' + (margin.bottom -10) + ")")
                    .call(yAxis)
                    .append("text")
                    .attr("id", "yAxisLabel")
@@ -166,26 +182,61 @@
                     .style("fill", function(d) {
                         return color(genre(d));
                     })
-                    .on('mouseover', function (d) {
-                        if (d.display === 1) {
-                            d3.select(this)
-                            .transition()
-                            .duration(500)
-                            .attr('r',6)
-                            .attr('stroke-width',1.5)
-                            console.log(d["Year"])
-
+                    .on('click', function(d) { 
+                        if (!isClicked) {
                             div.transition()
-                                .duration(200)
-                                .style("opacity", 0.9);
-                            div.html(d["Name"] + " (" + d["Year"] +")<br>" +  d["Genre"] + "<br>" + d["Rate"] + "<br>")
-                                .style("left", (d3.event.pageX) + "px")
-                                .style("top", (d3.event.pageY) + "px")
+                            .duration(200)
+                            .style("opacity", 0.9)
+                            // d3.select(this).html(d["Name"] + " (" + d["Year"] +")<br>" + "Your rating(between 0 and 5): <input id='rating' type='number' name='quantity' placehoder=5 min='0' max='5'> " + "<input type='submit'>")
+                            var rating = d3.select("body")
+                                            .append('g')
+                                            .attr('id', 'rating')
+                                            .text("Your rating of " + d["Name"] + " (" + d["Year"] + "): ")
+                                            .append("input")
+                                            .attr('type', 'number')
+                                            .attr('name', 'quantity')
+                                            .attr('id', 'ratingNum')
+                                            .attr('min', 0)
+                                            .attr('max', 5)
+
+                                // .append("text")
+                                // .attr("id", "rating")
+                                // .html("<br>" + d["Name"] + " (" + d["Year"] +")<br>" + "Your rating(between 0 and 5): <input id='rating' type='number' name='quantity' placehoder=5 min='0' max='5'> " + "<input type='submit' id='submit'>")
                         }
-                        
+                        else {
+                            d3.select('#ratingNum').html(function() {
+                                console.log(d["Name"] + ": " + this.value)
+                                return this.value;
+                            })
+                            div.attr("opacity", 0);
+                            d3.select("#rating").remove();
+                            
+                            // div_2.attr("opacity", 0);
+                        }
+                        isClicked = !isClicked
+                    })
+                    .on('mouseover', function (d) {
+                        if (!isClicked) {
+                            if (d.display === 1) {
+                                d3.select(this)
+                                .transition()
+                                .duration(500)
+                                .attr('r',6)
+                                .attr('stroke-width',1.5)
+
+                                div.transition()
+                                    .duration(200)
+                                    .style("opacity", 0.9);
+                                div.html(d["Name"] + " (" + d["Year"] +")<br>" +  d["Genre"] + "<br>" + d["Rate"] + "<br>")
+                                    .style("left", (d3.event.pageX) + "px")
+                                    .style("top", (d3.event.pageY) + "px")
+                                    .attr("opacity", 0.9);
+                            }
+                        }
                     })
                     .on('mouseout', function (d) {
-                        if (d.display === 1) {
+                        if (!isClicked) {
+                            if (d.display === 1) {
                             d3.select(this)
                             .transition()
                             .duration(500)
@@ -195,8 +246,8 @@
                             div.transition()
                                 .duration(500)
                                 .style("opacity", 0)
+                            }
                         }
-                
                     })
                     // .attr("transform", transform);
                 
@@ -222,11 +273,6 @@
                       .text(function(d) {
                           return d;
                       });
-                      
-                /*--- create menu ---*/
-                var variable = ["Popularity", "Rate"];
-
-                var time_category = ["Most recent", "2000s", "Classic 1900s"]
                 
                 // var x_menu = d3.select("body")
                 //             .append("left-div")
@@ -265,24 +311,7 @@
                 //                         return d;
                 //                     });    
 
-                var time_menu = d3.select("body")
-                                    .append("right-div")
-                                    .attr("id", "timeMenu")
-                var time_text = time_menu.append("span")
-                                        .text("Release Date")
-                var time_options = time_menu.append('select')
-                                        .attr("id", 'time_options')
-                                        .on('change', changeTime)
-                                        .selectAll('option')
-                                        .data(time_category)
-                                        .enter()
-                                        .append('option')
-                                        .attr('value', function(d) {
-                                            return d;
-                                        })
-                                        .text(function(d) {
-                                            return d;
-                                        });
+                
                                 
                 /*--- change y-axis ---*/
                 // function changeY() {
@@ -390,7 +419,6 @@
                 function changeTime() {
                     // rerender();
                     timeSelection = this.value
-                    console.log(timeSelection);
                     var start_y;
                     var end_y;
                     if (timeSelection === 'Most recent') {
@@ -503,4 +531,4 @@
     </div>
 
 </body>
-</html>>
+</html>
