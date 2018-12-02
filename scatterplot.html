@@ -2,9 +2,12 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Assignment 2 - Zijie Lu</title>
+    <title>MovieLens Project</title>
     <link rel="stylesheet" type="text/css" media="screen" href="style.css" />
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
+    <link rel="stylesheet" href="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.css">
     <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.js"></script>
 </head>
 <body>
     <h1>Movie Rate and Popularity</h1>
@@ -12,7 +15,7 @@
     <label><input id="Comedy" type="checkbox">Comedy</label>
     <label><input id="Action" type="checkbox">Action</label>
     <label><input id="Mystery" type="checkbox">Mystery</label>
-    <label><input id="Crime" type="checkbox">Comedy</label>
+    <label><input id="Crime" type="checkbox">Crime</label>
     <label><input id="Thriller" type="checkbox">Thriller</label>
     <label><input id="Drama" type="checkbox">Drama</label>
     <label><input id="Animation" type="checkbox">Animation</label>
@@ -26,6 +29,14 @@
     <label><input id="Musical" type="checkbox">Musical</label>
     <label><input id="Romance" type="checkbox">Romance</label>
     <label><input id="War" type="checkbox">War</label><br>
+    <script>
+    RadarChart.defaultConfig.color = function() {};
+    RadarChart.defaultConfig.radius = 3;
+    RadarChart.defaultConfig.w = 400;
+    RadarChart.defaultConfig.h = 400;
+    </script>
+    <span></span>
+    
     <div id="path">
         <script>
             var margin = {
@@ -57,6 +68,47 @@
                         .style("opacity", 0)
 
             var isClicked = false;
+            
+            var N = 18
+            var userScore = new Array(N).fill(Math.ceil(Math.random() * 10))
+            
+            var genreList = ["Action", "Adventure", "Animation", "Children", "Comendy",
+                                "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir",
+                                "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
+                                "War", "Western"]
+            var user_radar = [
+                    {
+                        className: 'user',
+                        axes: [
+                            {axis: 'Action', value: 0},
+                            {axis: 'Adventure', value: 0},
+                            {axis: 'Animation', value: 0},
+                            {axis: 'Children', value: 0},
+                            {axis: 'Comedy', value: 0},
+                            {axis: 'Crime', value: 0},
+                            {axis: 'Documentary', value: 0},
+                            {axis: 'Drama', value: 0},
+                            {axis: 'Fantasy', value: 0},
+                            {axis: 'Film-Noir', value: 0},
+                            {axis: 'Horror', value: 0},
+                            {axis: 'Musical', value: 0},
+                            {axis: 'Mystery', value: 0},
+                            {axis: 'Romance', value: 0},
+                            {axis: 'Sci-Fi', value: 0},
+                            {axis: 'Thriller', value: 0},
+                            {axis: 'War', value: 0},
+                            {axis: 'Western', value: 0}
+                        ]
+                    }
+                ]
+            
+            var chart = RadarChart.chart();
+            var cfg = chart.config();
+            var svg2 = d3.select('body').append('svg')
+                            .attr('width', cfg.w + cfg.w + 50)
+                            .attr('height', cfg.h + cfg.h / 4);
+
+            console.log(userScore)
 
             // var svg2 = d3.select("body")
             //             .append("svg")
@@ -102,12 +154,7 @@
                                 .append("svg")
                                 .attr("width", width)
                                 .attr("height", height);
-                // var svg2 = d3.select("#path2")
-                //         svg2.append("circle")
-                //             .attr("cx", 100)
-                //             .attr("cy", 100)
-                //             .attr("r", 90)
-                //             .attr("fill", "blue")
+
                 /*--- Set the scales ---*/
                 xScale.domain([0, d3.max(data, function(d) {
                                         return d[xSelection];
@@ -198,10 +245,10 @@
                                             .attr('id', 'ratingNum')
                                             .attr('min', 0)
                                             .attr('max', 5)
-
-                                // .append("text")
-                                // .attr("id", "rating")
-                                // .html("<br>" + d["Name"] + " (" + d["Year"] +")<br>" + "Your rating(between 0 and 5): <input id='rating' type='number' name='quantity' placehoder=5 min='0' max='5'> " + "<input type='submit' id='submit'>")
+                            var index = genreList.indexOf(d["Genre_1"]);
+                            userScore[index] += 1;
+                            console.log(userScore);
+                            drawRadarChart();
                         }
                         else {
                             d3.select('#ratingNum').html(function() {
@@ -273,6 +320,21 @@
                       .text(function(d) {
                           return d;
                       });
+
+                /*--- create user radar chart ---*/
+                
+                svg2.append('g').classed('single', 1)
+                    .datum(fillDataset())
+                    .call(chart);
+                
+                // chart.config({
+                //     w: cfg.w / 4,
+                //     h: cfg.h / 4,
+                //     axisText: false,
+                //     levels: 0, 
+                //     circles: false
+                // });
+                // cfg = chart.config();
                 
                 // var x_menu = d3.select("body")
                 //             .append("left-div")
@@ -482,7 +544,7 @@
                 function update(){ 
                     id = this.id
                     if(this.checked ){
-                        console.log(this)
+                        // console.log(this)
                         d3.selectAll(".dot")
                             .filter(function(d){
                                 //console.log(d)
@@ -525,6 +587,40 @@
                                 d.display = 0;
                                 return 0;
                             })
+                }
+
+                function randomDataset() {
+                    return user_radar.map(function(d) {
+                        return {
+                        className: d.className,
+                        axes: d.axes.map(function(axis, i) {
+                            return {axis: axis.axis, value: Math.ceil(Math.random() * 10)};
+                        })
+                        
+                        };
+                    });
+                }
+                
+                function fillDataset() {
+                    return user_radar.map(function(d) {
+                        return {
+                        className: d.className,
+                        axes: d.axes.map(function(axis, i) {
+                            return {axis: axis.axis, value: userScore[i]};
+                        })
+                        };
+                    });
+                }
+
+                function drawRadarChart() {
+                    // chart.config({axisText: false, circles: false});
+                    // cfg = chart.config();
+                    var newChart = svg2.selectAll('g.single').data([fillDataset()]);
+                    newChart.enter().append('g').classed('single', 1)
+                    newChart.attr('transfrom', function(d) {
+                        console.log(user_radar);
+                        return 'translate(' + 0 + ',' + 0 + ')'; })
+                        .call(chart);
                 }
             });
         </script>
