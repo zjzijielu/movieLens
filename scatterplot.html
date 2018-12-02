@@ -71,7 +71,7 @@
             
             var N = 18
             var userScore = new Array(N).fill(Math.ceil(Math.random() * 10))
-            
+
             var genreList = ["Action", "Adventure", "Animation", "Children", "Comendy",
                                 "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir",
                                 "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
@@ -245,8 +245,21 @@
                                             .attr('id', 'ratingNum')
                                             .attr('min', 0)
                                             .attr('max', 5)
-                            var index = genreList.indexOf(d["Genre_1"]);
-                            userScore[index] += 1;
+                            index = []
+                            index.push(genreList.indexOf(d["Genre_1"]));
+                            index.push(genreList.indexOf(d["Genre_2"]));
+                            index.push(genreList.indexOf(d["Genre_3"]));
+                            index.push(genreList.indexOf(d["Genre_4"]));
+                            index.push(genreList.indexOf(d["Genre_5"]));
+                            index.push(genreList.indexOf(d["Genre_6"]));
+                            index.push(genreList.indexOf(d["Genre_7"]));
+                            console.log(index)
+                            for (var i = 0; i < 7; i++) {
+                                if (index[i] != -1) {
+                                    userScore[index[i]] += 1;
+                                }
+                            }
+                            
                             console.log(userScore);
                             drawRadarChart();
                         }
