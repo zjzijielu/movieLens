@@ -2,31 +2,42 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Assignment 2 - Zijie Lu</title>
+    <title>MovieLens Project</title>
     <link rel="stylesheet" type="text/css" media="screen" href="style.css" />
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
+    <link rel="stylesheet" href="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.css">
     <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.js"></script>
 </head>
 <body>
     <h1>Movie Rate and Popularity</h1>
-    <label><input id="Adventure" type="checkbox">Adventure</label>
-    <label><input id="Comedy" type="checkbox">Comedy</label>
-    <label><input id="Action" type="checkbox">Action</label>
-    <label><input id="Mystery" type="checkbox">Mystery</label>
-    <label><input id="Crime" type="checkbox">Comedy</label>
-    <label><input id="Thriller" type="checkbox">Thriller</label>
-    <label><input id="Drama" type="checkbox">Drama</label>
-    <label><input id="Animation" type="checkbox">Animation</label>
-    <label><input id="Children" type="checkbox">Children</label>
-    <label><input id="Horror" type="checkbox">Horror</label>
-    <label><input id="Documentary" type="checkbox">Documentary</label>
-    <label><input id="Sci-Fi" type="checkbox">Sci-Fi</label>
-    <label><input id="Fantasy" type="checkbox">Fantasy</label>
-    <label><input id="Film-Noir" type="checkbox">Film-Noir</label>
-    <label><input id="Western" type="checkbox">Western</label>
-    <label><input id="Musical" type="checkbox">Musical</label>
-    <label><input id="Romance" type="checkbox">Romance</label>
-    <label><input id="War" type="checkbox">War</label>
-
+    <label><input id="Adventure" type="checkbox" name='cb'>Adventure</label>
+    <label><input id="Comedy" type="checkbox" name='cb'>Comedy</label>
+    <label><input id="Action" type="checkbox" name='cb'>Action</label>
+    <label><input id="Mystery" type="checkbox" name='cb'>Mystery</label>
+    <label><input id="Crime" type="checkbox" name='cb'>Crime</label>
+    <label><input id="Thriller" type="checkbox" name='cb'>Thriller</label>
+    <label><input id="Drama" type="checkbox" name='cb'>Drama</label>
+    <label><input id="Animation" type="checkbox" name='cb'>Animation</label>
+    <label><input id="Children" type="checkbox" name='cb'>Children</label>
+    <label><input id="Horror" type="checkbox" name='cb'>Horror</label>
+    <label><input id="Documentary" type="checkbox" name='cb'>Documentary</label>
+    <label><input id="Sci-Fi" type="checkbox" name='cb'>Sci-Fi</label>
+    <label><input id="Fantasy" type="checkbox" name='cb'>Fantasy</label>
+    <label><input id="Film-Noir" type="checkbox" name='cb'>Film-Noir</label>
+    <label><input id="Western" type="checkbox" name='cb'>Western</label>
+    <label><input id="Musical" type="checkbox" name='cb'>Musical</label>
+    <label><input id="Romance" type="checkbox" name='cb'>Romance</label>
+    <label><input id="War" type="checkbox" name='cb'>War</label><br>
+    <input type="Button" onclick="togglecheckboxes('cb')" value="uncheck all" />
+    <script>
+    RadarChart.defaultConfig.color = function() {};
+    RadarChart.defaultConfig.radius = 3;
+    RadarChart.defaultConfig.w = 400;
+    RadarChart.defaultConfig.h = 400;
+    </script>
+    <span></span>
+    
     <div id="path">
         <script>
             var margin = {
@@ -35,400 +46,648 @@
                     left: 100,
                     right: 50
                 };
-
                 var width = 600;
-                var height = 400;
+                var height = 300;
 
+            var checked = 0;
             var xScale = d3.scale.linear()
                             .range([0, width - margin.left - margin.right])
                             .nice();
-
             var yScale = d3.scale.linear()
                             .range([height - margin.bottom - margin.top, 0])
                             .nice();
-
             var xSelection = "Popularity";
             var ySelection = "Rate";
+            var timeSelection = "Most recent"
+            var time_menu = d3.select("#path")
+                                    .append("g")
+                                    .attr("id", "timeMenu")
+            var id;
+            var div = d3.select("#path")
+                        .append("div")
+                        .attr("class", "tooltip")
+                        .style("opacity", 0)
+            var movie_num = 793
+            var isClicked = false;
+            var user_rating = new Array(movie_num).fill(0)
+            var received_rating;
+            var movie_index;
+            var N = 18;
+            var user_records = new Array()
+            var userScore = new Array(N).fill(1)
+            var movieID = new Array()
+            var movieRating = new Array()
 
-            d3.csv("movies_rate.csv", function(data) {
-                
-                data.forEach(function (d) {
-                    d[xSelection] = parseFloat(d[xSelection]);
-                    d[ySelection] = parseFloat(d[ySelection]);
-                });
-
-                /*--- Create layers ---*/
-                var layer1 = d3.select("#path")
-                            .append("svg")
-                            .attr("width", width + margin.left + margin.right)
-                            .attr("height", height + margin.top + margin.bottom)
-                
-                var layer2 = layer1.append("g")
-                                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-                                .append("svg")
-                                .attr("width", width)
-                                .attr("height", height);
-
-                /*--- Set the scales ---*/
-                xScale.domain([0, 1.05 * d3.max(data, function(d) {
-                                        return d[xSelection];
-                                    })]);
-
-                var xAxis = d3.svg.axis()
-                                // .scale(xScale)
-                                .orient("bottom")
-                                .ticks(5)
-                                .tickFormat(function(d) {
-                                    if (xSelection.includes('Rate')) {
-                                        return d3.format(".2f")(d * 100) + "%";
-                                    } else if (xSelection.includes('mortaility')) {
-                                        return d3.format(".2f")(d * 100) + "%";
-                                    } else if (xSelection.includes("%")) {
-                                        return d3.format(".2f")(d) + "%";
-                                    } else {
-                                        return d;
-                                    }
-                                });
-                xAxis.scale(xScale);    
-
-                yScale.domain([0, 1.05 * d3.max(data, function(d) {
-                                        return d[ySelection];
-                                    })]);
-                            
-                var yAxis = d3.svg.axis()
-                                // .scale(yScale)
-                                .orient("left")
-                                .ticks(5)
-                                .tickFormat(function(d) {
-                                    if (ySelection.includes('Rate')) {
-                                        return d3.format(".2f")(d);
-                                    } else if (ySelection.includes('mortaility')) {
-                                        return d3.format(".2f")(d);
-                                    } else if (ySelection.includes("%")) {
-                                        return d3.format(".2f")(d);
-                                    } else {
-                                        return d;
-                                    }
-                                });
-                                
-                yAxis.scale(yScale);
-                /*--- create zoom ---*/
-                var zoomBeh = d3.behavior.zoom()
-                                 .x(xScale)
-                                 .y(yScale)
-                                .scaleExtent([0.8, 5])
-                                .on("zoom", zoom);   
-
-                /*--- Assemble axes into figures ---*/
-                layer1.append('g')
-                   .attr('class', 'x axis')
-                   .attr('id', 'xAxis')
-                   .attr('transform', 'translate(' + margin.left + ',' + (height - margin.bottom) + ")")
-                   .call(xAxis)
-                   .append("text")
-                   .attr('id', 'xAxisLabel')
-                   .attr("x", width - margin.right)
-                   .attr("text-anchor", "end")
-                   .text(xSelection);
-
-                layer1.append('g')
-                   .attr('class', 'y axis')
-                   .attr('id', 'yAxis')
-                   .attr('transform', 'translate(' + margin.left + ',' + margin.bottom + ")")
-                   .call(yAxis)
-                   .append("text")
-                   .attr("id", "yAxisLabel")
-                   .attr("text-anchor", "end")
-                   .attr("y", 10)
-                   .attr("transform", "rotate(-90)")
-                   .text(ySelection);
-                
-                layer1.call(zoomBeh);
-                layer2.call(zoomBeh);    
-
-                /*--- Draw the dots ---*/
-                var genre = function(d) {
-                    return d["Genre_1"];
-                }
-
-                var color = d3.scale.category10();
-
-                var dots = layer2.selectAll(".dot")
-                    .data(data)
-                    .enter()
-                    .append("circle")
-                    .attr("class", "dot")
-                    .attr("r", 3)
-                    .attr("cx", function(d) {
-                        d.display = 1;
-                        return xScale(d[xSelection]);
-                    })
-                    .attr("cy", function(d) {
-                        return yScale(d[ySelection]);   
-                    })
-                    .style("fill", function(d) {
-                        return color(genre(d));
-                    })
-                    .on('mouseover', function () {
-                        d3.select(this)
-                        .transition()
-                        .duration(500)
-                        .attr('r',6)
-                        .attr('stroke-width',3)
-                    })
-                    .on('mouseout', function () {
-                        d3.select(this)
-                        .transition()
-                        .duration(500)
-                        .attr('r',3)
-                        .attr('stroke-width',1)
-                    })
-                    // .attr("transform", transform);
-                
-                /*--- create legends ---*/ 
-                var legend = layer1.selectAll(".legend")
-                                .data(color.domain())
-                                .enter()
-                                .append("g")
-                                .attr("class", "legend")
-                                .attr("transform", function(d, i) {
-                                    return "translate(0,  " + i * 15 + ")";
-                                });
-                
-                legend.append("rect")
-                      .attr("x", width - 50 )
-                      .attr("width", 20)
-                      .attr("height", 13)
-                      .style("fill", color);
-                
-                legend.append("text")
-                      .attr("x", width - 50 + 25)
-                      .attr("y", 11)
-                      .text(function(d) {
-                          return d;
-                      });
-                      
-                /*--- create menu ---*/
-                var variable = ["Popularity", "Rate", "Year"];
-                
-                var x_menu = d3.select("body")
-                            .append("left-div")
-                            .attr("id", "menu");
-                var x_text = x_menu.append('span')
-                                .text("Select X-Axis variable");
-                var x_options = x_menu.append('select')
-                                    .attr('id', 'options')
-                                    .on('change', changeX)
-                                    .selectAll('option')
-                                    .data(variable)
-                                    .enter()
-                                    .append('option')
-                                    .attr('value', function(d) {
-                                        return d;
-                                    })
-                                    .text(function(d) {
-                                        return d;
-                                    });
-
-                var y_menu = d3.select("body")
-                            .append("right-div")
-                            .attr("id", "menu");
-                var y_text = y_menu.append('span')
-                                .text("Select Y-Axis variable");
-                var y_options = y_menu.append('select')
-                                    .attr('id', 'options')
-                                    .on('change', changeY)
-                                    .selectAll('option')
-                                    .data(variable)
-                                    .enter()
-                                    .append('option')
-                                    .attr('value', function(d) {
-                                        return d;
-                                    })
-                                    .text(function(d) {
-                                        return d;
-                                    });
-
-                /*--- change y-axis ---*/
-                function changeY() {
-                    ySelection = this.value;
-                    yScale.domain([d3.min(data, function(d) {
-                        return parseFloat(d[ySelection])
-                    }),
-                    1.05 * d3.max(data,function(d) { 
-                        return parseFloat(d[ySelection]); 
-                        })
-                    ])
-                    yAxis.scale(yScale)
-                        .tickFormat(function(d) {
-                            if (ySelection.includes('Rate')) {
-                                return d3.format(".2f")(d * 100) + "%";
-                            } else if (ySelection.includes('mortaility')) {
-                                return d3.format(".2f")(d * 100) + "%";
-                            } else if (ySelection.includes("%")) {
-                                return d3.format(".2f")(d) + "%";
-                            } else {
-                                return d;
-                            }
-                        });
-                    d3.select('#yAxis')
-                        .transition()
-                        .duration(1000)
-                        .call(yAxis);
-                    d3.select('#yAxisLabel')
-                        .text(ySelection);
-                    d3.selectAll('.dot')
-                        .call(function() {
-                            var newZoombeh = d3.behavior.zoom()
-                                .x(xScale)
-                                .y(yScale)
-                                .scaleExtent([0.8, 5])
-                                .on("zoom", function(){
-                                    layer1.select("#xAxis").call(xAxis);
-                                    layer1.select("#yAxis").call(yAxis);
-                                    layer2.selectAll("circle")
-                                        .attr("transform", transform);
-                                });
-                            layer1.call(newZoombeh);
-                        })
-                        .transition()
-                        .duration(1000)
-                        // .delay(function(d, i) {
-                        //     return (i * 10);
-                        // })
-                        .attr('cy', function(d) {
-                            return yScale(parseFloat(d[ySelection]));
-                        });
-                }
-
-                function changeX() {
-                    xSelection = this.value;
-                    xScale.domain([d3.min(data, function(d) {
-                                return parseFloat(d[xSelection]);
-                            }),
-                    1.05 * d3.max(data,function (d) { 
-                        return parseFloat(d[xSelection]);
-                        })
-                    ])
-                    xAxis.scale(xScale)
-                        .tickFormat(function(d) {
-                            if (xSelection.includes('Rate')) {
-                                return d3.format(".2f")(d);
-                            } else if (xSelection.includes('mortaility')) {
-                                return d3.format(".2f")(d);
-                            } else if (xSelection.includes("%")) {
-                                return d3.format(".2f")(d);
-                            } else {
-                                return d;
-                            }
-                        });
-                    
-                    d3.select('#xAxis')
-                        .transition()
-                        .duration(1000)
-                        .call(xAxis);
-                    d3.select('#xAxisLabel')
-                        .text(xSelection);
-                    d3.selectAll('circle')
-                        .transition()
-                        .duration(1000)
-                        // .delay(function(d, i) {
-                        //     return (i * 10);
-                        // })
-                        .attr('cx', function(d) {
-                            return xScale(parseFloat(d[xSelection]));
-                        })
-                        .call(function() {
-                            var newZoombeh = d3.behavior.zoom()
-                                .x(xScale)
-                                .y(yScale)
-                                .scaleExtent([0.8, 5])
-                                .on("zoom", function(){
-                                    layer1.select("#xAxis").call(xAxis);
-                                    layer1.select("#yAxis").call(yAxis);
-                                    layer2.selectAll("circle")
-                                        .attr("transform", transform);
-                                });
-                            layer1.call(newZoombeh);
-                        });
-                        
-                }
-
-                //checkbox operations
-                var genres_display = new Array();
-                d3.select("#Adventure").on("change",update);
-                d3.select("#Comedy").on("change",update);
-                d3.select("#Action").on("change",update);
-                d3.select("#Mystery").on("change",update);
-                d3.select("#Crime").on("change",update);
-                d3.select("#Thriller").on("change",update);
-                d3.select("#Drama").on("change",update);
-                d3.select("#Animation").on("change",update);
-                d3.select("#Children").on("change",update);
-                d3.select("#Horror").on("change",update);
-                d3.select("#Documentary").on("change",update);
-                d3.select("#Sci-Fi").on("change",update);
-                d3.select("#Fantasy").on("change",update);
-                d3.select("#Film-Noir").on("change",update);
-                d3.select("#Western").on("change",update);
-                d3.select("#Musical").on("change",update);
-                d3.select("#Romance").on("change",update);
-                d3.select("#War").on("change",update);
-
-                
-                d3.selectAll(".dot")
-                .attr("r", function(d){
-                    d.display = 0;
-                    return 0;
-                })
-
-                function update(){ 
-                    var id = this.id
-                    if(this.checked ){
-                        console.log(this)
-                        d3.selectAll(".dot")
-                            .filter(function(d){
-                                //console.log(d)
-                                return (d["Genre_1"] == id && d.display == 0)
-                            })
-                            .attr("r", function(d){
-                                d.display = 1;
-                                return 3;
-                            }) 
-
+            var genreList = ["Action", "Adventure", "Animation", "Children", "Comedy",
+                                "Crime", "Documentary", "Drama", "Fantasy", "Film-Noir",
+                                "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
+                                "War", "Western"]
+            var user_radar = [
+                    {
+                        className: 'user',
+                        axes: [
+                            {axis: 'Action', value: 0},
+                            {axis: 'Adventure', value: 0},
+                            {axis: 'Animation', value: 0},
+                            {axis: 'Children', value: 0},
+                            {axis: 'Comedy', value: 0},
+                            {axis: 'Crime', value: 0},
+                            {axis: 'Documentary', value: 0},
+                            {axis: 'Drama', value: 0},
+                            {axis: 'Fantasy', value: 0},
+                            {axis: 'Film-Noir', value: 0},
+                            {axis: 'Horror', value: 0},
+                            {axis: 'Musical', value: 0},
+                            {axis: 'Mystery', value: 0},
+                            {axis: 'Romance', value: 0},
+                            {axis: 'Sci-Fi', value: 0},
+                            {axis: 'Thriller', value: 0},
+                            {axis: 'War', value: 0},
+                            {axis: 'Western', value: 0}
+                        ]
                     }
-                    else{
+                ]
+            
+            var chart = RadarChart.chart();
+            var cfg = chart.config();
+            var svg2 = d3.select('body').append('svg')
+                            .attr('width', cfg.w + 50)
+                            .attr('height', cfg.h + 10);
+            
+            var svg3 = d3.select('body').append('svg')
+                            .attr('id', 'similarUser')
+                            .attr('width', 600)
+                            .attr('height', 400 + 10)
+
+            svg3.append('text')
+                    .attr('x', 130)
+                    .attr('y', 40)
+                    .style("font-size", "30px")
+                    .text('Similar Users')
+
+            console.log(userScore);
+
+            // var svg2 = d3.select("body")
+            //             .append("svg")
+            //             .attr("class","svg")
+            //             .attr("width", 100)
+            //             .attr("height", 100)
+            
+            function togglecheckboxes(cn){
+                var cbarray = document.getElementsByName(cn);
+                for(var i = 0; i < cbarray.length; i++){
+                    cbarray[i].checked = false;
+                }
+                d3.selectAll(".dot")
+                    .attr("r", function(d) {
+                        d.display = 0;
+                        d.is_genre = false;
+                    })
+                checked = 0;
+            }
+            d3.csv("new_movie_rates.csv", function(data) {
+                d3.csv("rating_matrix.csv", function(data2) {
+                    console.log(data2)
+                    data.forEach(function(d) {
+                        // console.log(d["MovieID"]);
+                        movieID.push((d["MovieID"]))
+                    })
+
+                    data2.forEach(function(d) {
+                        var single_user_record = new Array()
+                        for (var i = 0; i < movie_num; i++) {
+                            if (i == 0) {
+                                console.log(d['USERID'] + "rated " + d["356"]);
+                            }
+                            single_user_record.push(parseFloat(d[movieID[i]]));
+                        }
+                        // console.log(single_user_record);
+                        user_records.push(single_user_record);
+                    })
+                    
+                    console.log(user_records[0]);
+
+                    // console.log(movieID);
+
+                    data.forEach(function (d) {
+                        d[xSelection] = parseFloat(d[xSelection]);
+                        d[ySelection] = parseFloat(d[ySelection]);
+                    });
+
+                    /*--- create menu ---*/
+                    var time_category = ["Most recent", "2010s", "2000s", "1900s"]
+                    
+                    var time_text = time_menu.append("span")
+                                            .text("Release Date")
+                    var time_options = time_menu.append('select')
+                                            .attr("id", 'time_options')
+                                            .on('change', function(d) {
+                                                timeSelection = this.value;
+                                                changeTime();
+                                            })
+                                            .selectAll('option')
+                                            .data(time_category)
+                                            .enter()
+                                            .append('option')
+                                            .attr('value', function(d) {
+                                                return d;
+                                            })
+                                            .text(function(d) {
+                                                return d;
+                                            });
+                    time_menu.append('br')
+                    
+                    /*--- Create layers ---*/
+                    var layer1 = d3.select("#path")
+                                .attr('class', 'layer1')
+                                .append("svg")
+                                .attr("width", width + margin.left + margin.right)
+                                .attr("height", height + margin.top + margin.bottom)
+                    
+                    var layer2 = layer1.append("g")
+                                    .attr('class', 'layer2')
+                                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                                    .append("svg")
+                                    .attr("width", width)
+                                    .attr("height", height);
+
+                    /*--- Set the scales ---*/
+                    xScale.domain([0, d3.max(data, function(d) {
+                                            return d[xSelection];
+                                        })]);
+                    yScale.domain([0, 5.1]);
+                    // X-Axis
+                    var xAxis = d3.svg.axis()
+                        .scale(xScale)
+                        .ticks(5)
+                        .orient('bottom')
+
+                    // Y-axis
+                    var yAxis = d3.svg.axis()
+                        .scale(yScale)
+                        .ticks(5)
+                        .orient('left')
+                                    
+                    yAxis.scale(yScale);
+                    /*--- create zoom ---*/
+                    var zoomBeh = d3.behavior.zoom()
+                                    .x(xScale)
+                                    .y(yScale)
+                                    .scaleExtent([0.8, 5])
+                                    .on("zoom", zoom);   
+                    /*--- Assemble axes into figures ---*/
+                    layer1.append('g')
+                    .attr('class', 'x axis')
+                    .attr('id', 'xAxis')
+                    .attr('transform', 'translate(' + margin.left + ',' + (height - margin.bottom) + ")")
+                    .call(xAxis)
+                    .append("text")
+                    .attr('id', 'xAxisLabel')
+                    .attr("x", width - margin.right)
+                    .attr("y", -10)
+                    .attr("text-anchor", "end")
+                    .text(xSelection);
+                    layer1.append('g')
+                    .attr('class', 'y axis')
+                    .attr('id', 'yAxis')
+                    .attr('transform', 'translate(' + margin.left + ',' + (margin.bottom -10) + ")")
+                    .call(yAxis)
+                    .append("text")
+                    .attr("id", "yAxisLabel")
+                    .attr("text-anchor", "end")
+                    .attr("y", 10)
+                    .attr("transform", "rotate(-90)")
+                    .text(ySelection);
+                    
+                    layer1.call(zoomBeh);
+                    layer2.call(zoomBeh);    
+                    /*--- Draw the dots ---*/
+                    var genre = function(d) {
+                        return d["Genre_1"];
+                    }
+                    var color = d3.scale.category10();
+                    var dots = layer2.selectAll(".dot")
+                        .data(data)
+                        .enter()
+                        .append("circle")
+                        .attr("class", "dot")
+                        .attr("r", 3)
+                        .attr("stroke", "black")
+                        .attr("cx", function(d) {
+                            d.display = 1;
+                            return xScale(d[xSelection]);
+                        })
+                        .attr("cy", function(d) {
+                            return yScale(d[ySelection]);   
+                        })
+                        .style("fill", function(d) {
+                            return color(genre(d));
+                        })
+                        .on('click', function(d) { 
+                            if (!isClicked) {
+                                div.transition()
+                                .duration(200)
+                                .style("opacity", 0.9)
+                                // d3.select(this).html(d["Name"] + " (" + d["Year"] +")<br>" + "Your rating(between 0 and 5): <input id='rating' type='number' name='quantity' placehoder=5 min='0' max='5'> " + "<input type='submit'>")
+                                var rating = d3.select("#timeMenu")
+                                                .append('span')
+                                                .attr('id', 'rating')
+                                                .text("Your rating of " + d["Name"] + " (" + d["Year"] + "): ")
+                                                .append("input")
+                                                .attr('type', 'number')
+                                                .attr('name', 'quantity')
+                                                .attr('id', 'ratingNum')
+                                                .attr('min', 0)
+                                                .attr('max', 5)
+                                var br = d3.select('#timeMenu')
+                                            .append('br')
+                                            .attr('class', 'removable')
+                                index = []
+                                
+                                console.log("Movie: " + d["Name"] + " ID: " + d["MovieID"]);
+                                movie_index = movieID.indexOf(d["MovieID"]);
+                                console.log("Movie index: " + movie_index);
+
+
+                                index.push(genreList.indexOf(d["Genre_1"]));
+                                index.push(genreList.indexOf(d["Genre_2"]));
+                                index.push(genreList.indexOf(d["Genre_3"]));
+                                index.push(genreList.indexOf(d["Genre_4"]));
+                                index.push(genreList.indexOf(d["Genre_5"]));
+                                index.push(genreList.indexOf(d["Genre_6"]));
+                                index.push(genreList.indexOf(d["Genre_7"]));
+                                // console.log(index)
+                                for (var i = 0; i < 7; i++) {
+                                    if (index[i] != -1) {
+                                        userScore[index[i]] += 1;
+                                    }
+                                }
+                                
+                                // console.log(userScore);
+                                drawRadarChart();
+                            }
+                            else {
+                                d3.select('#ratingNum').html(function() {
+                                    console.log("user rated " + d["Name"] + ": " + this.value)
+                                    received_rating = parseFloat(this.value);
+                                    user_rating[movie_index] = received_rating;
+                                    console.log(user_rating);
+                                    computeCosine();
+                                    return this.value;
+                                })
+                                div.attr("opacity", 0);
+                                d3.select("#rating").remove();
+                                time_menu.select('.removable').remove();
+                                
+                                // div_2.attr("opacity", 0);
+                            }
+                            isClicked = !isClicked
+                        })
+                        .on('mouseover', function (d) {
+                            if (!isClicked) {
+                                if (d.display === 1) {
+                                    d3.select(this)
+                                    .transition()
+                                    .duration(500)
+                                    .attr('r',6)
+                                    .attr('stroke-width',1.5)
+
+                                    div.transition()
+                                        .duration(200)
+                                        .style("opacity", 0.9);
+                                    div.html(d["Name"] + " (" + d["Year"] +")<br>" +  d["Genre"] + "<br>" + d["Rate"] + "<br>" + "Popularity: " + d["Popularity"])
+                                        .style("left", (d3.event.pageX) + "px")
+                                        .style("top", (d3.event.pageY) + "px")
+                                        .attr("opacity", 0.9);
+                                }
+                            }
+                        })
+                        .on('mouseout', function (d) {
+                            if (!isClicked) {
+                                if (d.display === 1) {
+                                d3.select(this)
+                                .transition()
+                                .duration(500)
+                                .attr('r',3)
+                                .attr('stroke-width',1)
+                                
+                                div.transition()
+                                    .duration(500)
+                                    .style("opacity", 0)
+                                }
+                            }
+                        })
+                        // .attr("transform", transform);
+                    
+                    /*--- create legends ---*/ 
+                    var legend = layer1.selectAll(".legend")
+                                    .data(color.domain())
+                                    .enter()
+                                    .append("g")
+                                    .attr("class", "legend")
+                                    .attr("transform", function(d, i) {
+                                        return "translate(0,  " + i * 15 + ")";
+                                    });
+                    
+                    legend.append("rect")
+                        .attr("x", width - 50 )
+                        .attr("width", 20)
+                        .attr("height", 13)
+                        .style("fill", color);
+                    
+                    legend.append("text")
+                        .attr("x", width - 50 + 25)
+                        .attr("y", 11)
+                        .text(function(d) {
+                            return d;
+                        });
+
+                    /*--- create user radar chart ---*/
+                    
+                    svg2.append('g').classed('single', 1)
+                        .datum(fillDataset())
+                        .call(chart);
+                    
+                    function changeTime() {
+                        // rerender();
+                        var start_y;
+                        var end_y;
+                        if (timeSelection === 'Most recent') {
+                            start_y = 2017;
+                            end_y = 2018;
+                        } else if (timeSelection === '2010s') {
+                            start_y = 2010;
+                            end_y = 2016;
+                        } else if (timeSelection === '2000s') {
+                            start_y = 2000;
+                            end_y = 2009;
+                        } else if (timeSelection === '1900s') {
+                            start_y = 1900;
+                            end_y = 1999; 
+                        } 
+                        console.log(start_y + " " + end_y);
                         d3.selectAll(".dot")
-                            .filter(function(d){
-                                //console.log(d)
-                                return (d["Genre_1"] == id && d.display == 1)
+                            .filter(function(d) {
+                                // console.log(d['Year']);
+                                // console.log(parseFloat(d["Year"]) > end_y && parseFloat(d["Year"]) < start_y)
+                                // select all movies not in the time range
+                                var in_time_range = parseFloat(d["Year"]) <= end_y && parseFloat(d["Year"]) >= start_y
+                                // console.log(d["Name"] + " " + d["Year"] + " " + in_time_range + " " + d.is_genre);
+                                if (in_time_range && d.is_genre) {
+                                    d.display = 1;
+                                    d3.select(this).attr("r", 3);
+                                }
+                                return (parseFloat(d["Year"]) > end_y || parseFloat(d["Year"]) < start_y)
                             })
-                            .attr("r", function(d){
+                            .attr("r", function(d) {
+                                // console.log(d['Year'])
                                 d.display = 0;
                                 return 0;
                             })
+                        // d3.selectAll(".dot")
+                        //     .filter(function(d) {
+                        //         if (d["Genre_1"] == id) {
+                        //             return (parseFloat(d["Year"]) <= end_y && parseFloat(d["Year"]) >= start_y)
+                        //         }
+                        //         return false;
+                        //     })
+                        //     .attr("r", function(d) {
+                        //         // console.log(d['Year'])
+                        //         d.display = 1;
+                        //         return 3;
+                        //     })
+                    }
+                    //checkbox operations
+                    var genres_display = new Array();
+                    d3.selectAll("input[name='cb']").on('change', update);
+                    
+                    rerender();
+                    
+                    function update(){ 
+                        console.log("timeSelection: " + timeSelection);
+                        id = this.id
+                        if(this.checked ){
+                            console.log(this)
+                            checked += 1;
+                            console.log(checked);
+                            d3.selectAll(".dot")
+                                .filter(function(d){
+                                    //console.log(d)
+                                    var is_genre = (d["Genre_1"] == id || d["Genre_2"] == id ||
+                                                    d["Genre_3"] == id || d["Genre_4"] == id ||
+                                                    d["Genre_5"] == id || d["Genre_6"] == id ||
+                                                    d["Genre_7"] == id)
+                                    if (checked == 1) {
+                                        d.is_genre = is_genre;
+                                    } else {
+                                        d.is_genre = d.is_genre && is_genre;
+                                    }
+                                    
+                                    if (is_genre != true) {
+                                        d.display = 0;
+                                    }
+                                    if (checked == 1) {
+                                        return (is_genre && d.display == 0);
+                                    } else {
+                                        return (is_genre == false);
+                                    }
+                                    
+                                })
+                                .attr("r", function(d){
+                                    if (checked == 1) {
+                                        d.display = 1;
+                                        return 3;
+                                    } else {
+                                        d.display = 0;
+                                    }
+                                    
+                                })
+                        }
+                        else{
+                            console.log("timeSelection: " + timeSelection);
+                            checked -= 1;
+                            d3.selectAll(".dot")
+                                .filter(function(d){
+                                    //console.log(d)
+                                    var is_genre = (d["Genre_1"] == id || d["Genre_2"] == id ||
+                                                    d["Genre_3"] == id || d["Genre_4"] == id ||
+                                                    d["Genre_5"] == id || d["Genre_6"] == id ||
+                                                    d["Genre_7"] == id)
+                                    return (is_genre && d.display == 1)
+                                })
+                                .attr("r", function(d){
+                                    d.display = 0;
+                                    return 0;
+                                })
+                        }
+                        changeTime();
+                        
+                    }
+                    function zoom() {
+                        layer1.select("#xAxis")
+                                .call(xAxis);
+                        layer1.select("#yAxis")
+                                .call(yAxis);
+                        
+                        layer2.selectAll(".dot")
+                            .attr("transform", transform);
+                    }
+                    function transform(d) {
+                        return "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")";
+                    }
 
+                    function rerender() {
+                        d3.selectAll(".dot")
+                            .attr("r", function(d){
+                                    d.display = 0;
+                                    return 0;
+                                })
                     }
                     
-                }
+                    function fillDataset() {
+                        return user_radar.map(function(d) {
+                            return {
+                            className: d.className,
+                            axes: d.axes.map(function(axis, i) {
+                                return {axis: axis.axis, value: userScore[i]};
+                            })
+                            };
+                        });
+                    }
 
+                    function drawRadarChart() {
+                        // chart.config({axisText: false, circles: false});
+                        // cfg = chart.config();
+                        var newChart = svg2.selectAll('g.single').data([fillDataset()]);
+                        newChart.enter().append('g').classed('single', 1)
+                        newChart.attr('transfrom', function(d) {
+                            console.log(user_radar);
+                            return 'translate(' + 0 + ',' + 0 + ')'; })
+                            .call(chart);
+                    }
 
-                function zoom() {
-                    layer1.select("#xAxis")
-                            .call(xAxis);
-                    layer1.select("#yAxis")
-                            .call(yAxis);
+                    function computeCosine() {
+                        var vec_prod;
+                        var mod_A = 0;
+                        var mod_B = 0   ;
+                        var similarity_array = new Array();
+                        for (var j = 0; j < movie_num; j++) {
+                            mod_A += Math.pow(user_rating[j], 2);
+                        }
+                        mod_A = Math.sqrt(mod_A);
+                        for (var i = 0; i < 610; i++) {
+                            vec_prod = 0;
+                            mode_B = 0;
+                            for (var j = 0; j < movie_num; j++) {
+                                mod_B += Math.pow(user_records[i][j], 2);
+                                vec_prod += user_rating[j] * user_records[i][j];
+                            }
+                            mod_B = Math.sqrt(mod_B)
+                            similarity_array.push(vec_prod / (mod_A * mod_B));
+                        }
+                        console.log(similarity_array)
+                        var similarity_array_copy = similarity_array.slice()
+                        var similarUser = similarity_array_copy.sort((a,b) => b-a).slice(0,3);  
+                        console.log(similarUser)                      
+                        var similarUserID = new Array()
+                        for (var i = 0; i < 3; i++) {
+                            similarUserID.push(similarity_array.indexOf(similarUser[i]));
+                        }
+                        console.log(similarUserID);
+                        // var 
+                        var y = 100;
+                        var x = 150;
+                        svg3.selectAll(".removable").remove()
+                        for (var i = 0; i < 3; i++) {
+                            movie_id_list = highestRated(similarUserID[i]);
+                            for (var j = 0; j < 3; j++) {
+                                data.forEach(function(d) {
+                                    if (d["MovieID"] === movie_id_list[j]) {
+                                        d3.select('#similarUser')
+                                            .append('text')
+                                            .attr('class', 'removable')
+                                            .attr("y", y * (j + 1))
+                                            .attr("x", x * i)
+                                            .text(d["Name"])
+                                            .style("font-size", (25-j*5)+"px")
+                                            .call(wrap, 130);
+
+                                        console.log(d["Name"]);
+                                    }
+                                })
+                            }
+                        }
+                        
+                    }
                     
-                    layer2.selectAll(".dot")
-                        .attr("transform", transform);
-                }
+                    function highestRated(id) {
+                        var rating_array_copy = user_records[id].slice()
+                        // console.log(rating_array_copy);
+                        // var top5 = rating_array_copy.sort((a,b) => b-a).slice(0,5);  
+                        // console.log(rating_array_copy)
+                        sortWithIndeces(rating_array_copy);
+                        // console.log(rating_array_copy)
+                        console.log(rating_array_copy.sortIndices);
+                        console.log(rating_array_copy.sortIndices.slice(0, 3))
+                        var top3_movie_id = new Array()
+                        for (var i = 0; i < 3; i++) {
+                            top3_movie_id.push(movieID[rating_array_copy.sortIndices[i]])
+                        }
+                        console.log(top3_movie_id)
+                        return top3_movie_id;
+                    }
 
-                function transform(d) {
-                    return "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")";
-            }
+                    function sortWithIndeces(toSort) {
+                        for (var i = 0; i < toSort.length; i++) {
+                            toSort[i] = [toSort[i], i];
+                        }
+                        toSort.sort(function(left, right) {
+                            return left[0] > right[0] ? -1 : 1;
+                        });
+                        toSort.sortIndices = [];
+                        for (var j = 0; j < toSort.length; j++) {
+                            toSort.sortIndices.push(toSort[j][1]);
+                            toSort[j] = toSort[j][0];
+                        }
+                        return toSort;
+                        }
 
+                    function wrap(text, width) {
+                        text.each(function () {
+                            var text = d3.select(this),
+                                words = text.text().split(/\s+/).reverse(),
+                                word,
+                                line = [],
+                                lineNumber = 0,
+                                lineHeight = 1.1, // ems
+                                x = text.attr("x"),
+                                y = text.attr("y"),
+                                dy = 0, //parseFloat(text.attr("dy")),
+                                tspan = text.text(null)
+                                            .append("tspan")
+                                            .attr("x", x)
+                                            .attr("y", y)
+                                            .attr("dy", dy + "em");
+                            while (word = words.pop()) {
+                                line.push(word);
+                                tspan.text(line.join(" "));
+                                if (tspan.node().getComputedTextLength() > width) {
+                                    line.pop();
+                                    tspan.text(line.join(" "));
+                                    line = [word];
+                                    tspan = text.append("tspan")
+                                                .attr("x", x)
+                                                .attr("y", y)
+                                                .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                                                .text(word);
+                                }
+                            }
+                        });
+                    }
+                })
             });
         </script>
     </div>
+
 </body>
-</html>>
+</html>

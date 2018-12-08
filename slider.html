@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>d3.js v4 - two connected sliders with labels in svg</title>
+    <meta charset="utf-8" />
+    <link 
+        rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.css"
+    />
+    <style>
+        body {
+            margin: 10;
+        }
+        #svg-filter {
+            width: 100%;
+            height: 150px;
+        }
+    .ticks {
+      font: 10px sans-serif;
+    }
+    
+    .track,
+    .track-inset,
+    .track-overlay {
+      stroke-linecap: round;
+    }
+    
+    .track {
+      stroke: #000;
+      stroke-opacity: 0.3;
+      stroke-width: 10px;
+    }
+    
+    .track-inset {
+      stroke: #ddd;
+      stroke-width: 8px;
+    }
+    
+    .track-overlay {
+      pointer-events: stroke;
+      stroke-width: 50px;
+      stroke: transparent;
+      cursor: crosshair;
+    }
+
+    .handle {
+      fill: #fff;
+      stroke: #000;
+      stroke-opacity: 0.5;
+      stroke-width: 1.25px;
+    }   
+    </style>
+</head>
+<body>
+      <div id="row-filter">
+        <svg id="svg-filter"></svg>
+      </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.3/leaflet.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter/1.3.12/crossfilter.min.js"></script>
+    
+    <script>
+    
+function setAndRunStations(error, data) {
+  if (error) throw error;
+
+  // initializing 
+  var tempMonthly = data[0];
+
+  // converting data
+  tempMonthly.forEach(function(cur, i) {
+      cur.Year = +cur.Year;
+      cur.Month = +cur.Month;
+      cur.Temperature = +cur.Temperature;
+      cur.Observations = +cur.Observations;
+  });
+  console.log(tempMonthly);
+
+
+  // layout
+  var svgFilter = d3.select("#svg-filter");
+  
+  // calculate first and last year of entries
+  var yearFirst = tempMonthly.reduce(function redToYearFirst(prev, curr) {
+    return prev.Year < curr.Year ? prev : curr;
+  }).Year;
+  var yearLast = tempMonthly.reduce(function redToYearLast(prev, curr) {
+    return prev.Year > curr.Year ? prev : curr;
+  }).Year;
+  console.log(yearFirst, yearLast);
+  
+  // slider
+  var sliderWidth = 500;
+  var sliderMargin = {
+    "top" : 30,
+    "bottom" : 100,
+    "left" : 30,
+    "right" : 550
+  };
+  var xYearFirst = d3.scaleLinear()
+      .domain([yearFirst, yearLast])
+      .range([0, sliderWidth])
+      .clamp(true);
+  var xYearLast = d3.scaleLinear()
+      .domain([yearFirst, yearLast])
+      .range([0, sliderWidth])
+      .clamp(true);
+  
+  var sliderYearFirst = svgFilter.append("g")
+      .attr("class", "slider")
+      .attr("transform", "translate(" + sliderMargin.left + "," + sliderMargin.top + ")");
+  var sliderYearLast = svgFilter.append("g")
+      .attr("class", "slider")
+      .attr("transform", "translate(" + sliderMargin.left + "," + sliderMargin.bottom + ")");
+  
+  sliderYearFirst.append("line")
+      .attr("class", "track")
+      .attr("x1", xYearFirst.range()[0])
+      .attr("x2", xYearFirst.range()[1])
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+      .attr("class", "track-inset")
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+      .attr("class", "track-overlay")
+      .call(d3.drag()
+          .on("start.interrupt", function() { sliderYearFirst.interrupt(); }));
+        //   .on("start drag", function() { setHandle1(xYearFirst.invert(d3.event.x)); }));
+  sliderYearLast.append("line")
+      .attr("class", "track")
+      .attr("x1", xYearLast.range()[0])
+      .attr("x2", xYearLast.range()[1])
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+      .attr("class", "track-inset")
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+      .attr("class", "track-overlay")
+      .call(d3.drag()
+          .on("start.interrupt", function() { sliderYearLast.interrupt(); }));
+        //   .on("start drag", function() { setHandle2(xYearLast.invert(d3.event.x)); }));
+  
+  sliderYearFirst.insert("g", ".track-overlay")
+      .attr("class", "ticks")
+      .attr("transform", "translate(0," + 18 + ")")
+    .selectAll("text")
+    .data(xYearFirst.ticks(10))
+    .enter().append("text")
+      .attr("x", xYearFirst)
+      .attr("text-anchor", "middle")
+      .text(function(d) { return d; });
+  var handle1 = sliderYearFirst.insert("circle", ".track-overlay")
+      .attr("class", "handle")
+      .attr("cx",0)
+      .attr("r", 9);
+  
+  sliderYearLast.insert("g", ".track-overlay")
+      .attr("class", "ticks")
+      .attr("transform", "translate(0," + 18 + ")")
+    .selectAll("text")
+    .data(xYearLast.ticks(10))
+    .enter().append("text")
+      .attr("x", xYearLast)
+      .attr("text-anchor", "middle")
+      .text(function(d) { return d; });
+  var handle2 = sliderYearLast.insert("circle", ".track-overlay")
+      .attr("class", "handle")
+      .attr("cx",0)
+      .attr("r", 9);
+
+  function setHandle1(h) {
+    handle1.attr("cx", xYearFirst(Math.round(h)));
+    svgFilter.style("background-color", d3.hsl(xYearFirst.invert(handle1.attr("cx")), 0.8, 0.8));
+    updateFilterText();
+  }
+  function setHandle2(h) {
+    handle2.attr("cx", xYearFirst(Math.round(h)));
+    svgFilter.style("background-color", d3.hsl(xYearFirst.invert(handle2.attr("cx")), 0.8, 0.8));
+    updateFilterText();
+  }
+  
+  // adding text to svgFilter 
+  function getHandleCx() {
+    return [handle1.attr("cx"),handle2.attr("cx")];
+  }
+  var filterPreText = "selected years: ";
+  var handles = [getHandleCx()];
+  
+  var svgFilterTextMarginY = [sliderMargin.top,sliderMargin.bottom]
+  var svgFilterText = svgFilter
+      .insert("g")
+      .selectAll("text")
+      .data([0,1])
+      .enter()
+      .append("text");
+  var svgFilterLabels =  svgFilterText
+      .attr("x", function(d) { return sliderMargin.right; })
+      .attr("y", function(d) { return svgFilterTextMarginY[d]; })
+      .text( function (d) { return 0; })
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "10px");
+
+  var svgFilterDesc = svgFilter
+      .insert("g")
+      .selectAll("text")
+      .data([2])
+      .enter()
+      .append("text");
+  var svgFilterDescText =  svgFilterDesc
+      .attr("x", function(d) { return sliderMargin.right+30; })
+      .attr("y", function(d) { 
+        return (sliderMargin.bottom-sliderMargin.top)/2+sliderMargin.top; 
+      })
+      .text( function (d) { return 0; })
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "15px");
+  
+
+  function getRangeText() {
+    var valA = xYearFirst.invert(handle1.attr("cx"));
+    var valB = xYearLast.invert(handle2.attr("cx"));
+    var curText = "";
+    if (valA == valB) {
+      curText = "["+valA+"]";
+    } else if (valA < valB) {
+      curText = "["+valA+"-"+valB+"]";
+    } else if (valA > valB) {
+      curText = "]"+valB+"-"+valA+"[";
+    }
+    return [valA,valB,curText];
+  }
+  function updateFilterText() {
+    var data = getRangeText();
+    var valA = +data[0];
+    var valB = +data[1]
+    var curText = data[2];
+    d3.select("#years-range").text(curText);
+    redrawLabel([valA,valB]);
+    redrawLabelDesc(curText);
+  }
+  function redrawLabel(curVal) {
+    svgFilterLabels
+      .text(function(d) { return curVal[d]; })
+  }
+  function redrawLabelDesc(curText) {
+    svgFilterDescText
+      .text(function(d) { return filterPreText+curText; })
+  }
+  
+  
+  // move second slider in the begin to demonstrate interactive possibility      
+  sliderYearFirst.transition() 
+      .duration(300)
+    //   .tween("hue1", function() {
+    //     var i = d3.interpolate(0, 100);
+    //     return function(t) { setHandle1(xYearFirst.invert(i(t))); };
+    //   });
+  sliderYearLast.transition() 
+      .duration(1500)
+    //   .tween("hue2", function() {
+    //     var i = d3.interpolate(0, 300);
+    //     return function(t) { setHandle2(xYearLast.invert(i(t))); };
+    //   }); 
+}
+
+var q = d3.queue()
+    .defer(d3.csv,"https://gist.githubusercontent.com/linoba/519a82088abbc8084c8672d5c804e17e/raw/4a4c1dfa9b85ad8ffc3ecfc60797ab6b6bdebcc0/temperature-monthly-europe.csv")
+    .awaitAll(setAndRunStations);
+
+    </script>
+    
+</body>
+</html>
