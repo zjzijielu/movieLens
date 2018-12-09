@@ -172,6 +172,7 @@
             
             function togglecheckboxes(cn){
                 d3.select("#path").selectAll(".tooltip").remove()
+                d3.selectAll(".removable").remove()
                 var cbarray = document.getElementsByName(cn);
                 for(var i = 0; i < cbarray.length; i++){
                     cbarray[i].checked = false;
@@ -208,9 +209,6 @@
                         data2.forEach(function(d) {
                             var single_user_record = new Array()
                             for (var i = 0; i < movie_num; i++) {
-                                if (i == 0) {
-                                    console.log(d['USERID'] + "rated " + d["356"]);
-                                }
                                 single_user_record.push(parseFloat(d[movieID[i]]));
                             }
                             // console.log(single_user_record);
@@ -320,8 +318,10 @@
                             .style("fill", function(d) {
                                 return color(genre(d));
                             })
-                            .on("dblclick", clicked)
+                            // .on("dblclick", clicked)
                             .on('click', function(d) { 
+                                console.log("after click: " + this.id);
+                                clicked(this);
                                 if (!isClicked) {
                                     div.transition()
                                     .duration(200)
@@ -773,10 +773,10 @@
                         })
 
                     var recommend_film = new Array()
-                    function clicked(){
-                        console.log(this.id)
+                    function clicked(item){
+                        console.log("in clicked: " + item)
                         recommend_film = []
-                        id = this.id
+                        id = item.id
                         initial()
                         link.filter(function(d){
                             return (d.target.id == id || d.source.id == id)
