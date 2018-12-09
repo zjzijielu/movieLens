@@ -26,26 +26,32 @@
     <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
     <script src="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.js"></script>
 </head>
-<body>
+<body style="margin:20;padding:0">
     <h1>Movie Rate and Popularity</h1>
-    <label><input id="Adventure" type="checkbox" name='cb'>Adventure</label>
-    <label><input id="Comedy" type="checkbox" name='cb'>Comedy</label>
-    <label><input id="Action" type="checkbox" name='cb'>Action</label>
-    <label><input id="Mystery" type="checkbox" name='cb'>Mystery</label>
-    <label><input id="Crime" type="checkbox" name='cb'>Crime</label>
-    <label><input id="Thriller" type="checkbox" name='cb'>Thriller</label>
-    <label><input id="Drama" type="checkbox" name='cb'>Drama</label>
-    <label><input id="Animation" type="checkbox" name='cb'>Animation</label>
-    <label><input id="Children" type="checkbox" name='cb'>Children</label>
-    <label><input id="Horror" type="checkbox" name='cb'>Horror</label>
-    <label><input id="Documentary" type="checkbox" name='cb'>Documentary</label>
-    <label><input id="Sci-Fi" type="checkbox" name='cb'>Sci-Fi</label>
-    <label><input id="Fantasy" type="checkbox" name='cb'>Fantasy</label>
-    <label><input id="Film-Noir" type="checkbox" name='cb'>Film-Noir</label>
-    <label><input id="Western" type="checkbox" name='cb'>Western</label>
-    <label><input id="Musical" type="checkbox" name='cb'>Musical</label>
-    <label><input id="Romance" type="checkbox" name='cb'>Romance</label>
-    <label><input id="War" type="checkbox" name='cb'>War</label><br>
+    <table>
+        <tr>
+            <td><label><input id="Adventure" type="checkbox" name='cb'>Adventure</label></td>
+            <td><label><input id="Comedy" type="checkbox" name='cb'>Comedy</label></td>
+            <td><label><input id="Action" type="checkbox" name='cb'>Action</label></td>
+            <td><label><input id="Mystery" type="checkbox" name='cb'>Mystery</label></td>
+            <td><label><input id="Crime" type="checkbox" name='cb'>Crime</label></td>
+            <td><label><input id="Thriller" type="checkbox" name='cb'>Thriller</label></td> 
+            <td><label><input id="Drama" type="checkbox" name='cb'>Drama</label></td>
+            <td><label><input id="Animation" type="checkbox" name='cb'>Animation</label></td>
+            <td><label><input id="Children" type="checkbox" name='cb'>Children</label></td>
+        </tr>
+        <tr>
+            <td><label><input id="Horror" type="checkbox" name='cb'>Horror</label></td>
+            <td><label><input id="Documentary" type="checkbox" name='cb'>Documentary</label></td>
+            <td><label><input id="Sci-Fi" type="checkbox" name='cb'>Sci-Fi</label></td>
+            <td><label><input id="Fantasy" type="checkbox" name='cb'>Fantasy</label></td>
+            <td><label><input id="Film-Noir" type="checkbox" name='cb'>Film-Noir</label></td>
+            <td><label><input id="Western" type="checkbox" name='cb'>Western</label></td>
+            <td><label><input id="Musical" type="checkbox" name='cb'>Musical</label></td>
+            <td><label><input id="Romance" type="checkbox" name='cb'>Romance</label></td>
+            <td><label><input id="War" type="checkbox" name='cb'>War</label><br></td>
+        </tr>
+    </table>
     <input type="Button" onclick="togglecheckboxes('cb')" value="uncheck all" name = "uncheck all" />
     <script>
     RadarChart.defaultConfig.color = function() {};
@@ -143,11 +149,11 @@
             var svg2 = d3.select('#path').append('svg')
                             .attr("id", "chart")
                             .attr('width', cfg.w)
-                            .attr('height', cfg.h);
+                            .attr('height', cfg.h + 40);
             
             svg2.append('text')
-                    .attr('x', cfg.w / 2 - 60)
-                    .attr('y', cfg.h + 30)
+                    .attr('x', cfg.w / 2 - 70)
+                    .attr('y', cfg.h + 20)
                     .text('Your Preferences')
             
             var svg4 = d3.select('#path').append('svg')
