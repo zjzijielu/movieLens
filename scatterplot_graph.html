@@ -26,7 +26,7 @@
     <script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
     <script src="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.js"></script>
 </head>
-<body style="margin:20;padding:0">
+<body style="margin:20;padding:0" id='body'>
     <h1>Movie Rate and Popularity</h1>
     <table>
         <tr>
@@ -95,6 +95,7 @@
             var received_rating;
             var movie_index;
             var N = 18;
+            var colors = ["#000000", "#585858", "#848484"];
             var user_records = new Array()
             var userScore = new Array(N).fill(1)
             var movieID = new Array()
@@ -156,13 +157,18 @@
                     .attr('y', cfg.h + 20)
                     .text('Your Preferences')
             
-            var svg4 = d3.select('#path').append('svg')
+
+            var div2 = d3.selectAll('#body').append("div")
+                        .attr("class", "#path2")
+                        .style("opacity", 0)
+
+            var svg4 = d3.select('#body').append('svg')
                             .attr('id', 'graph')
                             //.attr("transform", "translate(,0) ")
                             .attr('width', 600)
                             .attr('height', 600)
             
-            var svg3 = d3.select('#path').append('svg')
+            var svg3 = d3.select('#body').append('svg')
                             .attr('id', 'similarUser')
                             .attr('width', 600)
                             .attr('height', 650)
@@ -601,7 +607,7 @@
                             var newChart = svg2.selectAll('g.single').data([fillDataset()]);
                             newChart.enter().append('g').classed('single', 1)
                             newChart.attr('transfrom', function(d) {
-                                console.log(user_radar);
+                                // console.log(user_radar);
                                 return 'translate(' + 0 + ',' + 0 + ')'; })
                                 .call(chart);
                         }
@@ -624,19 +630,19 @@
                                 mod_B = Math.sqrt(mod_B)
                                 similarity_array.push(vec_prod / (mod_A * mod_B));
                             }
-                            console.log(similarity_array)
+                            // console.log(similarity_array)
                             var similarity_array_copy = similarity_array.slice()
                             var similarUser = similarity_array_copy.sort((a,b) => b-a).slice(0,3);  
-                            console.log(similarUser)                      
+                            // console.log(similarUser)                      
                             var similarUserID = new Array()
                             for (var i = 0; i < 3; i++) {
                                 similarUserID.push(similarity_array.indexOf(similarUser[i]));
                             }
-                            console.log(similarUserID);
+                            // console.log(similarUserID);
                             // var 
                             var y = 100;
                             var x = 180;
-                            var colors = ["#000000", "#585858", "#848484"]
+                            
                             svg3.selectAll(".removable").remove()
                             for (var i = 0; i < 3; i++) {
                                 movie_id_list = highestRated(similarUserID[i]);
@@ -655,7 +661,7 @@
                                                     if (j == 0) {
                                                         return "User" + (i+1);
                                                     } else {
-                                                        console.log(j + " " + d["Name"]);
+                                                        // console.log(j + " " + d["Name"]);
                                                         return d["Name"];
                                                     }
                                                 })
@@ -666,7 +672,23 @@
                                                         return (25-(j-1)*5)+"px";
                                                     }
                                                 })
-                                                .call(wrap, 150);
+                                                .call(wrap, 150)
+                                                .on('mouseover', function() {
+                                                    // console.log('mouseover')
+                                                    // console.log(this)
+                                                    d3.select(this).style('fill', 'black');
+                                                })
+                                                .on('mouseout', function(d) {
+                                                    d3.select(this).style('fill', function() {
+                                                        if (d3.select(this).attr('x') == 460) {
+                                                            return colors[2];
+                                                        } else if (d3.select(this).attr('x') == 280) {
+                                                            return colors[1];
+                                                        } else if (d3.select(this).attr('x') == 100) {
+                                                            return colors[0];
+                                                        }
+                                                    })
+                                                })
                                             // console.log(d["Name"]);
                                         }
                                     })
@@ -682,8 +704,8 @@
                             // console.log(rating_array_copy)
                             sortWithIndeces(rating_array_copy);
                             // console.log(rating_array_copy)
-                            console.log(rating_array_copy.sortIndices);
-                            console.log(rating_array_copy.sortIndices.slice(0, 3))
+                            // console.log(rating_array_copy.sortIndices);
+                            // console.log(rating_array_copy.sortIndices.slice(0, 3))
                             var top3_movie_id = new Array()
                             for (var i = 0; i < 3; i++) {
                                 top3_movie_id.push(movieID[rating_array_copy.sortIndices[i]])
