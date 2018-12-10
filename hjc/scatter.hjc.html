@@ -1,0 +1,754 @@
+<html>
+<meta charset="utf-8">
+<head>
+<title>MoVis</title>
+<!-- <link rel="stylesheet" href="d3v4.slider.css" />  -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.18/css/dataTables.jqueryui.min.css" />
+<style>
+body {
+  font-family: Verdana,Arial,sans-serif;
+}
+#reset-button {
+
+position: absolute;
+top: 760px;
+left: 50px;
+background: #f08080;
+padding-right: 26px;
+border-radius: 3px;
+border: none;
+color: white;
+margin: 0;
+padding: 0 12px;
+width: 60px;
+cursor: pointer;
+height: 40px;
+}
+#reset-button:hover {
+      background-color: #696969;
+    }    
+    
+    .ticks {
+      font-size: 10px;
+    }
+
+    .track,
+    .track-inset,
+    .track-overlay {
+      stroke-linecap: round;
+    }
+
+    .track {
+      stroke: #000;
+      stroke-opacity: 0.3;
+      stroke-width: 10px;
+    }
+
+    .track-inset {
+      stroke: #dcdcdc;
+      stroke-width: 8px;
+    }
+
+    .track-overlay {
+      pointer-events: stroke;
+      stroke-width: 50px;
+      stroke: transparent;
+      cursor: crosshair;
+    }
+
+    .handle {
+      fill: #fff;
+      stroke: #000;
+      stroke-opacity: 0.5;
+      stroke-width: 1.25px;
+    } 
+
+#play-button {
+      position: absolute;
+      top: 830px;
+      left: 50px;
+      background: #f08080;
+      padding-right: 26px;
+      border-radius: 3px;
+      border: none;
+      color: white;
+      margin: 0;
+      padding: 0 12px;
+      width: 60px;
+      cursor: pointer;
+      height: 30px;
+    }
+
+    #play-button:hover {
+      background-color: #696969;
+    }    
+    
+    .ticks {
+      font-size: 10px;
+    }
+
+    .track,
+    .track-inset,
+    .track-overlay {
+      stroke-linecap: round;
+    }
+
+    .track {
+      stroke: #000;
+      stroke-opacity: 0.3;
+      stroke-width: 10px;
+    }
+
+    .track-inset {
+      stroke: #dcdcdc;
+      stroke-width: 8px;
+    }
+
+    .track-overlay {
+      pointer-events: stroke;
+      stroke-width: 50px;
+      stroke: transparent;
+      cursor: crosshair;
+    }
+
+    .handle {
+      fill: #fff;
+      stroke: #000;
+      stroke-opacity: 0.5;
+      stroke-width: 1.25px;
+    } 
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+button {
+  position: absolute;
+  right: 30px;
+  top: 30px;
+}
+.dot {
+  stroke: #000;
+}
+dot.hidden {
+  fill: #ccc !important;
+}
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+.tooltip {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events: none;
+}
+	 h2 {
+      font-size: 1.2em;
+      margin: 60px 0 5px 0;
+    }
+    .wrapper {
+      width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .wrapper > div {
+      margin: 35px 0;
+    }
+   
+</style>
+</head>
+<body>
+<!-- <button>Reset</button> -->
+<div id="scatterplot"></div>
+<div id="vis">
+    <button id="play-button">Play</button>
+  </div>
+
+  <div id="vis">
+        <button id="reset-button">Reset Genre</button>
+      </div>
+<div class="wrapper">
+
+
+ <!-- <table id="movietable" class="display" width="100%"></table> -->
+ <script src="http://d3js.org/d3.v4.min.js"></script>
+ 
+<script>
+
+this.d3v4=d3
+</script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<!-- <script src="d3v4.slider.js"></script> -->
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+
+
+<script>
+ 
+
+var margin = {top: 20, right: 20, bottom: 250, left: 40},
+margin2 = {top: 580, right: 10, bottom: 35, left: 40},
+    width = 1200 - margin.left - margin.right,
+    height = 700 - margin.top - margin.bottom;
+	height2= 700 - margin2.top - margin2.bottom;
+    sliderHight=850
+	//parse the date/time
+	var parseDate = d3.time.format("%d-%b-%y").parse;
+	//var parseDate = d3.time.format("%m/%y").parse;
+	//range of runtime filter 
+	var runtime_min = 0;
+	var runtime_max = 250;
+	//movie table data
+	var dataSet = [];
+	//genre histogram data
+	var genre_data = [];
+	
+	//genre filter
+	var genrename = "";
+
+ var playButton = d3.select("#play-button");
+ var resetButton = d3.select("#reset-button");
+
+
+	// setup x 
+	var xValue = function(d) { 
+		// console.log(d.num)
+		return d.num;}, // data -> value
+	
+    xScale = d3.scale.linear().range([0,width]).nice();
+    xMap = function(d) { return xScale(xValue(d));}, // data -> display
+    xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+	// setup y
+	var yValue = function(d) { return d.rate;}, // data -> value
+    yScale = d3.scale.linear().range([height, 0]), // value -> display
+    yMap = function(d) { return yScale(yValue(d));}, // data -> display
+    yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+    // setup fill color
+	var cValue = function(d) { return d.genre;},
+    color = d3.scale.category10();
+	
+	var dot;
+	var histo;
+
+    var zoom = d3.behavior.zoom()
+    .x(xScale)
+    .y(yScale)
+    .scaleExtent([1,10])
+    .on("zoom",zoomed);
+
+
+	d3.select("button").on("click", reset);
+	function reset() {
+		//reset all the filter parameters
+		runtime_min = 0;
+		runtime_max = 250;
+		genrename = "";
+		// brush_extent = [[ 1, 10],[ 100, 10]];
+		
+		scatterplot.call(zoom
+			.x(xScale.domain([0, 200]))
+			.y(yScale.domain([0, 5]))
+			.event);
+			
+		dot.style("opacity", 1);
+		
+		detail_table.draw();
+	
+	}
+	
+    function zoomed(){
+      svg.select("g.x.axis").call(xAxis);
+      svg.select("g.y.axis").call(yAxis);
+      scatterplot.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+    }
+
+	var goValue=0;
+
+	yearR= function(geName,year){
+	for (var i = 0; i < genreR_data.length; i++) {
+    if(genreR_data[i]["ge"]==geName){
+		return genreR_data[i][year]
+	}
+}}
+
+	var currentScore=0
+
+   function filter_scatterplot(){
+			var year = 1994 + Math.floor(goValue/10)
+			if (year<1995){
+				year=1995
+			}
+			if (year>2018){
+				year=2018
+			}
+
+			if(genrename == ""){
+
+					dot
+			.style("opacity", .5)
+
+        .transition()
+			  .duration(330)
+
+
+
+			.attr("r", function(d){
+				yValue2 = d[year.toString()]
+				radius="3px"
+				if (yValue2==0){
+					radius="0px"
+				}
+				xMap2 =  xScale(d.num) // data -> display
+				if (xMap2>width-50){
+					radius="0px"
+				}
+
+				return radius;})
+
+      
+			.attr("cy", function(d){
+				// console.log(year)
+				yValue2 = d[year.toString()]
+				yMap2 = yScale(yValue2); // data -> display
+				return yMap2-17;
+				})	  
+
+			.attr("cx", function(d){
+				// console.log(year)
+				indexR="R"+year.toString()
+				xValue2 = d[indexR]
+				xMap2 = xScale(xValue2); // data -> display
+				return xMap2;
+				})	 
+
+				
+		}else{
+			//console.log(genrename)
+			dot
+			.filter(function(d) { 
+				
+				return d.genre != genrename
+
+									; })
+			.style("opacity", 0);
+
+			dot
+			.filter(function(d) { 
+				return d.genre == genrename
+			})
+      .transition()
+			  .duration(330)
+
+
+			.style("opacity", .5)
+			.attr("r", function(d){
+				yValue2 = d[year.toString()]
+				radius="3px"
+				if (yValue2==0){
+					radius="0px"
+				}
+				xMap2 =  xScale(d.num) // data -> display
+				if (xMap2>width-50){
+					radius="0px"
+				}
+				return radius;})
+			.attr("cy", function(d){
+				// console.log(year)
+				yValue2 = d[year.toString()]
+				yMap2 = yScale(yValue2); // data -> display
+				return yMap2-17;
+				})	  
+
+			.attr("cx", function(d){
+				// console.log(year)
+				indexR="R"+year.toString()
+				xValue2 = d[indexR]
+				xMap2 = xScale(xValue2); // data -> display
+				return xMap2;
+			})
+		}
+
+			histo.selectAll("rect")
+      .transition()
+			  .duration(430)
+
+
+			.attr("y", function(d) { 
+				year2 ="_"+ year.toString()
+				kt=yearR(d.x,year2)
+				// console.log(year2)
+			 return height2-10 - 30*kt; })
+			.attr("height", function(d){
+				year2 ="_"+ year.toString()
+				kt=yearR(d.x,year2)
+				return 30*kt;
+				});
+		}
+
+	// add the graph canvas to the body of the webpage
+	var svg = d3.select("#scatterplot").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom+176)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	;
+	var scatterplot = svg.append("g")
+    .attr("class", "scatterplot")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	//.call(zoom)
+	;
+	
+	var genrehistogram = svg.append("g")
+    .attr("class", "genrehistogram")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+	
+	scatterplot.append("g")
+    .attr("class", "brush")
+    // .call(brush);
+	
+    var rect = scatterplot.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .style("fill", "none")
+    //.style("pointer-events", "all");
+
+	// add the tooltip area to the webpage
+	var tooltip = d3.select("#scatterplot").append("svg")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+    var startDate = new Date("1995-01-01"),
+        endDate = new Date("2018-12-01");
+var genreR_data = [];
+var moving = false;
+var currentValue = 0;
+var targetValue = width-60;
+var formatDateIntoYear = d3v4.timeFormat("%Y");
+var formatDate = d3v4.timeFormat("%b %Y");
+var parseDate = d3v4.timeParse("%m/%d/%y");
+var x = d3v4.scaleTime()
+    .domain([startDate, endDate])
+    .range([0, targetValue])
+    .clamp(true);
+
+function step() {
+
+  update(x.invert(currentValue));
+  currentValue = currentValue + (targetValue/330);
+  if (currentValue > targetValue) {
+    moving = false;
+    currentValue = 0;
+    clearInterval(timer);
+    // timer = 0;
+    playButton.text("Play");
+  
+    // console.log("Slider moving: " + moving);
+  }
+}
+function update(h) {
+  // update position and text of label according to slider scale
+  handle.attr("cx", x(h));
+  label
+    .attr("x", x(h))
+    .text(formatDate(h));
+// console.log(currentValue)
+goValue=250/1140*currentValue
+filter_scatterplot(); 
+
+}
+
+var svg2 = d3v4.select("#scatterplot")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom+80); 
+
+var slider = svg2.append("g")
+    .attr("class", "slider")
+    .attr("transform", "translate(" + margin.left + "," + 50 + ")")
+    
+// treemap code here
+slider.append("line")
+    .attr("class", "track")
+    .attr("x1", x.range()[0])
+    .attr("x2", x.range()[1])
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "track-inset")
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "track-overlay")
+    .call(d3v4.drag()
+        .on("start.interrupt", function() { 
+            slider.interrupt(); })
+        .on("start drag", function() {
+          currentValue = d3v4.event.x;
+          update(x.invert(currentValue)); 
+        })
+    );
+    
+    
+slider.insert("g", ".track-overlay")
+    .attr("class", "ticks")
+    .attr("transform", "translate(0," + 18 + ")")
+  .selectAll("text")
+    .data(x.ticks(10))
+    .enter()
+    .append("text")
+    .attr("x", x)
+    .attr("y", 10)
+    .attr("text-anchor", "middle")
+    .text(function(d) { return formatDateIntoYear(d); });
+
+var handle = slider.insert("circle", ".track-overlay")
+    .attr("class", "handle")
+    .attr("r", 9);
+
+var label = slider.append("text")  
+    .attr("class", "label")
+    .attr("text-anchor", "middle")
+    .style("font-family", "avenir" ) 
+    .text(formatDate(startDate))
+    .attr("transform", "translate(0," + (-25) + ")")
+var t = d3v4.transition()
+      .duration(750);
+var genreType= "All genres"
+var myText =svg.append("text")
+        .attr("x", (width / 4))             
+        .attr("y", 760)
+        .attr("text-anchor", "middle")  
+        .style("font-family", "avenir" ) 
+        .style("font-size", "20px") 
+        .text(function(d) { return "Now Plotting: "+genreType })
+
+
+function redrawText(genreType) {
+    myText
+    .text(function(d) { return "Now Plotting: "+genreType })
+}
+
+
+d3.csv("data.csv", function(error, data) {
+	
+	d3.csv("Genres_Rate_95to18.csv", function(error2, data2) {
+		data2.forEach(function(d) {
+			
+			genreR_data.push({ge:d.fisrtGenre,_1995:d['1995'],_1996:d['1996'],_1997:d['1997'],
+			_1998: d['1998'],_1999: d['1999'],_2000: d['2000'],_2001: d['2001'],_2002: d['2002'],_2003: d['2003'],
+			_2004: d['2004'],_2005: d['2005'],_2006: d['2006'],_2007: d['2007'],_2008: d['2008'],_2009: d['2009'],
+			_2010: d['2010'],_2011: d['2011'],_2012: d['2012'],_2013: d['2013'],_2014: d['2014'],_2015: d['2015'],_2016: d['2016'],_2017: d['2017'],_2018: d['2018']});
+		});
+		
+  // change string (from CSV) into number format
+  data.forEach(function(d) {
+    d.rate = +d.rate;
+    d.year = +d.year;
+    d.num = d.num;
+	d.ReleaseDate = parseDate(d.ReleaseDate);
+	d.boxoffice = +d.boxoffice;
+	d.runtime = +d.runtime;
+	dataSet.push( [d.name,  d.rate, d.boxoffice, d.runtime, d.date, d.genre + d.genre1 + d.genre2 + d.genre3 + d.genre4 + d.genre5 + d.genre6, d.id]);
+    genre_data.push(d.runtime);
+  
+  });
+
+
+  // don't want dots overlapping axis, so add in buffer to data domain
+
+	xScale.domain([0, 200]);
+	yScale.domain([0, 5]);
+
+  // x-axis
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .style("font-family", "avenir" ) 
+      .call(xAxis
+       .ticks(10, 0))
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width+10)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .style("font-family", "avenir" ) 
+      .text("Popularity");
+  console.log(xAxis)
+
+  // y-axis
+  svg.append("g")
+      .attr("class", "y axis")
+      .style("font-family", "avenir" ) 
+      .call(yAxis)
+     .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .style("font-family", "avenir" ) 
+      .text("Rate");
+
+  // draw dots
+  dot = scatterplot.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+	
+      //.attr("class", "dot")
+      .attr("r", function(d){
+				return "3px";
+	  }) 
+      .attr("cx", xMap)
+      .attr("cy", yMap)	 
+      .style("fill", function(d) { return color(cValue(d));}) 
+	  .style("opacity", .5)
+      .on("mouseover", function(d) {
+          tooltip.transition()
+               .duration(200)
+               .style("opacity", .9);
+          tooltip.html(d["name"] + "<br/> (" + xValue(d) 
+          + ", " + yValue(d) + ")")
+               .style("left", (d3.event.pageX + 5) + "px")
+               .style("top", (d3.event.pageY - 28) + "px");
+      })
+      .on("mouseout", function(d) {
+          tooltip.transition()
+               .duration(500)
+               .style("opacity", 0);
+      })
+	  .on("click", function(d){
+						
+			//window.open ('SingleMoviePage.html','newwindow','height=600,width=800,top=300, left=400, toolbar=no, menubar=no, scrollbars=yes, resizable=yes, location=no, status=no') 
+
+			var movie_object = new Object();
+			movie_object.name = d.name;
+			movie_object.date = d.ReleaseDate;
+			movie_object.boxoffice = d.boxoffice;
+			movie_object.runtime = d.runtime;
+			movie_object.imdb = d.imdb;
+			window.showModalDialog("SingleMoviePage.html", movie_object, "dialogHeight:500px; dialogLeft:500px;"); 
+	});
+ 
+	//show the histogram of genre
+	var genre_his_data = [];
+	
+	var rect_step = width/color.domain().length-3;
+	var heights = [];
+	for(var i = 0;i < color.domain().length; i++){
+		genre_his_data.push({x: color.domain()[i], y: 10*i+100});
+		heights.push( genre_his_data[i].y );
+	}
+	var yScale_his = d3.scale.linear()
+						.domain([0,d3.max(heights)])
+						.range([0,height2-20]);
+	
+	//绘制矩形
+	
+	histo = genrehistogram.selectAll(".bar")
+    .data(genre_his_data)
+	.enter().append("g")
+    .attr("class", "bar")
+    .attr("transform", function(d, i) { 
+			return "translate(" + i * rect_step+ "," + 0 + ")"; });
+	//绘制坐标轴的直线
+	genrehistogram.append("line")
+			.attr("stroke","black")
+			.attr("stroke-width","1px")
+			.attr("x1",0)
+			.attr("y1",height2-10)
+			.attr("x2",genre_his_data.length * rect_step)
+			.attr("y2",height2-10);
+	
+  var opacity=0.5
+
+	histo.append("rect")
+			.attr("x", 1)
+			.style("opacity", opacity)
+			.attr("y", function(d) { 
+                kt=yearR(d.x,"_2017")
+			 return height2-10 - 30*kt; })
+			
+			.attr("width", function(d,i){
+				return rect_step - 2; 
+			})
+			.attr("height", function(d){
+                kt=yearR(d.x,"_2017")
+				return 30*kt;
+			})
+			.attr("fill", function(d){return color(d.x);})
+
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut)
+	
+			.on("click", function(d){
+				genrename = d.x
+                console.log(genrename)
+                genreType=genrename.toString()
+                // update2(genreType)
+                redrawText(genreType)
+				filter_scatterplot(); 
+	  });
+
+    function handleMouseOver(d) {  // Add interactivity
+
+// Use D3 to select element, change color and size
+d3.select(this).style("opacity", 0.8)
+
+}
+
+function handleMouseOut(d, i) {
+// Use D3 to select element, change color back to normal
+d3.select(this).style("opacity", 0.5)
+
+}
+	//绘制文字
+	histo.append("text")
+			.attr("font-size","10px")
+			.attr("x", 0)
+			.attr("y", height2-15)
+			.attr("dx",rect_step/2 - 8)
+			.attr("dy","15px")
+			.attr('transform', 'rotate(15)')
+			.text(function(d){
+				return d.x;
+			});
+
+    playButton
+    .on("click", function() {
+    var button = d3.select(this);
+    if (button.text() == "Pause") {
+      moving = false;
+      clearInterval(timer);
+      // timer = 0;
+      button.text("Play");
+    } else {
+      moving = true;
+      timer = setInterval(step, 100);
+      button.text("Pause");
+    }
+    
+    // console.log("Slider moving: " + moving);
+  })
+
+   resetButton
+    .on("click", function() {
+    var button = d3.select(this);
+    genrename=""
+    genreType= "All genres"
+    redrawText(genreType)
+    // console.log("Slider moving: " + moving);
+  })
+  
+  
+
+
+
+});
+});
+
+</script>
+</body>
+</html>

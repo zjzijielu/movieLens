@@ -176,7 +176,7 @@ dot.hidden {
 <div class="wrapper">
 
 
- <table id="movietable" class="display" width="100%"></table>
+ <!-- <table id="movietable" class="display" width="100%"></table> -->
  <script src="http://d3js.org/d3.v4.min.js"></script>
  
 <script>
@@ -191,6 +191,7 @@ this.d3v4=d3
 
 <script>
  
+
 var margin = {top: 20, right: 20, bottom: 250, left: 40},
 margin2 = {top: 580, right: 10, bottom: 35, left: 40},
     width = 1200 - margin.left - margin.right,
@@ -226,7 +227,7 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 		// console.log(d.num)
 		return d.num;}, // data -> value
 	
-    xScale = d3.time.scale().range([0,width-10]);
+    xScale = d3.scale.linear().range([0,width]).nice();
     xMap = function(d) { return xScale(xValue(d));}, // data -> display
     xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 
@@ -309,6 +310,12 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 			// 					(brush_extent[0][1] > d.rate || d.rate > brush_extent[1][1] ||
 			// 					brush_extent[0][0] > d.ReleaseDate || d.ReleaseDate > brush_extent[1][0]); })
 			.style("opacity", .5)
+
+        .transition()
+			  .duration(330)
+
+
+
 			.attr("r", function(d){
 				yValue2 = d[year.toString()]
 				radius="3px"
@@ -321,6 +328,8 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 				}
 
 				return radius;})
+
+      
 			.attr("cy", function(d){
 				// console.log(year)
 				yValue2 = d[year.toString()]
@@ -351,6 +360,10 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 			.filter(function(d) { 
 				return d.genre == genrename
 			})
+      .transition()
+			  .duration(330)
+
+
 			.style("opacity", .5)
 			.attr("r", function(d){
 				yValue2 = d[year.toString()]
@@ -380,6 +393,10 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 		}
 
 			histo.selectAll("rect")
+      .transition()
+			  .duration(430)
+
+
 			.attr("y", function(d) { 
 				year2 ="_"+ year.toString()
 				kt=yearR(d.x,year2)
@@ -444,7 +461,7 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 	// add the graph canvas to the body of the webpage
 	var svg = d3.select("#scatterplot").append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom+170)
+    .attr("height", height + margin.top + margin.bottom+176)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 	;
@@ -489,7 +506,7 @@ var x = d3v4.scaleTime()
 function step() {
 
   update(x.invert(currentValue));
-  currentValue = currentValue + (targetValue/151);
+  currentValue = currentValue + (targetValue/330);
   if (currentValue > targetValue) {
     moving = false;
     currentValue = 0;
@@ -510,22 +527,16 @@ function update(h) {
 goValue=250/1140*currentValue
 filter_scatterplot(); 
 
-
-  // filter data set and redraw plot
-//   var newData = dataset.filter(function(d) {
-//     return d.date < h;
-//   })
-//   drawPlot(newData);
 }
 
 var svg2 = d3v4.select("#scatterplot")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom); 
+    .attr("height", height + margin.top + margin.bottom+80); 
 
 var slider = svg2.append("g")
     .attr("class", "slider")
-    .attr("transform", "translate(" + margin.left + "," + 15 + ")")
+    .attr("transform", "translate(" + margin.left + "," + 50 + ")")
     
 // treemap code here
 slider.append("line")
@@ -565,17 +576,20 @@ var handle = slider.insert("circle", ".track-overlay")
 var label = slider.append("text")  
     .attr("class", "label")
     .attr("text-anchor", "middle")
+    .style("font-family", "avenir" ) 
     .text(formatDate(startDate))
     .attr("transform", "translate(0," + (-25) + ")")
-
+var t = d3v4.transition()
+      .duration(750);
 var genreType= "All genres"
 var myText =svg.append("text")
         .attr("x", (width / 4))             
         .attr("y", 760)
         .attr("text-anchor", "middle")  
+        .style("font-family", "avenir" ) 
         .style("font-size", "20px") 
-        .style("text-decoration", "underline")  
         .text(function(d) { return "Now Plotting: "+genreType })
+
 
 function redrawText(genreType) {
     myText
@@ -607,7 +621,6 @@ d3.csv("test.csv", function(error, data) {
   
   });
 
-  
 
   // don't want dots overlapping axis, so add in buffer to data domain
 
@@ -618,17 +631,22 @@ d3.csv("test.csv", function(error, data) {
   svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
-      .call(xAxis)
+      .style("font-family", "avenir" ) 
+      .call(xAxis
+       .ticks(10, 0))
     .append("text")
       .attr("class", "label")
-      .attr("x", width-10)
+      .attr("x", width+10)
       .attr("y", -6)
       .style("text-anchor", "end")
+      .style("font-family", "avenir" ) 
       .text("Popularity");
+  console.log(xAxis)
 
   // y-axis
   svg.append("g")
       .attr("class", "y axis")
+      .style("font-family", "avenir" ) 
       .call(yAxis)
      .append("text")
       .attr("class", "label")
@@ -636,6 +654,7 @@ d3.csv("test.csv", function(error, data) {
       .attr("y", 6)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
+      .style("font-family", "avenir" ) 
       .text("Rate");
 
   // draw dots
@@ -707,10 +726,12 @@ d3.csv("test.csv", function(error, data) {
 			.attr("y1",height2-10)
 			.attr("x2",genre_his_data.length * rect_step)
 			.attr("y2",height2-10);
-		
+	
+  var opacity=0.5
+
 	histo.append("rect")
 			.attr("x", 1)
-			.style("opacity", .5)
+			.style("opacity", opacity)
 			.attr("y", function(d) { 
                 kt=yearR(d.x,"_2017")
 			 return height2-10 - 30*kt; })
@@ -723,25 +744,31 @@ d3.csv("test.csv", function(error, data) {
 				return 30*kt;
 			})
 			.attr("fill", function(d){return color(d.x);})
-			/* .on("mouseover", function(d) {
-				dot
-				.filter(function(d) { return d.genre == d.x; })
-				.style("opacity", 1);
-				dot
-				.filter(function(d) { return d.genre != d.x; })
-				.style("opacity", .5);
-			})
-			.on("mouseout", function(d) {
-				filter_scatterplot();
-			;
-			})*/
+
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut)
+	
 			.on("click", function(d){
 				genrename = d.x
                 console.log(genrename)
                 genreType=genrename.toString()
+                // update2(genreType)
                 redrawText(genreType)
 				filter_scatterplot(); 
 	  });
+
+    function handleMouseOver(d) {  // Add interactivity
+
+// Use D3 to select element, change color and size
+d3.select(this).style("opacity", 0.8)
+
+}
+
+function handleMouseOut(d, i) {
+// Use D3 to select element, change color back to normal
+d3.select(this).style("opacity", 0.5)
+
+}
 	//绘制文字
 	histo.append("text")
 			.attr("font-size","10px")
