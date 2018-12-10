@@ -2,12 +2,121 @@
 <meta charset="utf-8">
 <head>
 <title>MoVis</title>
-<link rel="stylesheet" href="d3.slider.css" /> 
+<!-- <link rel="stylesheet" href="d3v4.slider.css" />  -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.10.18/css/dataTables.jqueryui.min.css" />
 <style>
 body {
   font-family: Verdana,Arial,sans-serif;
 }
+#reset-button {
+
+position: absolute;
+top: 760px;
+left: 50px;
+background: #f08080;
+padding-right: 26px;
+border-radius: 3px;
+border: none;
+color: white;
+margin: 0;
+padding: 0 12px;
+width: 60px;
+cursor: pointer;
+height: 40px;
+}
+#reset-button:hover {
+      background-color: #696969;
+    }    
+    
+    .ticks {
+      font-size: 10px;
+    }
+
+    .track,
+    .track-inset,
+    .track-overlay {
+      stroke-linecap: round;
+    }
+
+    .track {
+      stroke: #000;
+      stroke-opacity: 0.3;
+      stroke-width: 10px;
+    }
+
+    .track-inset {
+      stroke: #dcdcdc;
+      stroke-width: 8px;
+    }
+
+    .track-overlay {
+      pointer-events: stroke;
+      stroke-width: 50px;
+      stroke: transparent;
+      cursor: crosshair;
+    }
+
+    .handle {
+      fill: #fff;
+      stroke: #000;
+      stroke-opacity: 0.5;
+      stroke-width: 1.25px;
+    } 
+
+#play-button {
+      position: absolute;
+      top: 830px;
+      left: 50px;
+      background: #f08080;
+      padding-right: 26px;
+      border-radius: 3px;
+      border: none;
+      color: white;
+      margin: 0;
+      padding: 0 12px;
+      width: 60px;
+      cursor: pointer;
+      height: 30px;
+    }
+
+    #play-button:hover {
+      background-color: #696969;
+    }    
+    
+    .ticks {
+      font-size: 10px;
+    }
+
+    .track,
+    .track-inset,
+    .track-overlay {
+      stroke-linecap: round;
+    }
+
+    .track {
+      stroke: #000;
+      stroke-opacity: 0.3;
+      stroke-width: 10px;
+    }
+
+    .track-inset {
+      stroke: #dcdcdc;
+      stroke-width: 8px;
+    }
+
+    .track-overlay {
+      pointer-events: stroke;
+      stroke-width: 50px;
+      stroke: transparent;
+      cursor: crosshair;
+    }
+
+    .handle {
+      fill: #fff;
+      stroke: #000;
+      stroke-opacity: 0.5;
+      stroke-width: 1.25px;
+    } 
 
 .axis path,
 .axis line {
@@ -55,34 +164,40 @@ dot.hidden {
 </style>
 </head>
 <body>
-<button>Reset</button>
+<!-- <button>Reset</button> -->
 <div id="scatterplot"></div>
+<div id="vis">
+    <button id="play-button">Play</button>
+  </div>
+
+  <div id="vis">
+        <button id="reset-button">Reset Genre</button>
+      </div>
 <div class="wrapper">
 
-		<h2>Year</h2>
-		<code>From 1995 to 2018</code>
-		<div id="slider7"></div>
-	
 
-	<!-- <h2>Range Slider with event, values: <span id="slider3textmin">10</span>, <span id="slider3textmax">25</span></h2>
-    <code>d3.select('#slider3').call(d3.slider().axis(true).value( [ 10, 25 ] ).on("slide", function(evt, value) {<br>
-    &nbsp;&nbsp;d3.select('#slider3textmin').text(value[ 0 ]);<br />
-    &nbsp;&nbsp;d3.select('#slider3textmax').text(value[ 1 ]);<br>
-    })</code>
-    <div id="slider3"></div> -->
+ <!-- <table id="movietable" class="display" width="100%"></table> -->
+ <script src="http://d3js.org/d3.v4.min.js"></script>
+ 
+<script>
 
- <table id="movietable" class="display" width="100%"></table>
+this.d3v4=d3
+</script>
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="d3.slider.js"></script>
+<!-- <script src="d3v4.slider.js"></script> -->
 <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
 <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
 
+
 <script>
+ 
+
 var margin = {top: 20, right: 20, bottom: 250, left: 40},
 margin2 = {top: 580, right: 10, bottom: 35, left: 40},
     width = 1200 - margin.left - margin.right,
     height = 700 - margin.top - margin.bottom;
 	height2= 700 - margin2.top - margin2.bottom;
+    sliderHight=850
 	//parse the date/time
 	var parseDate = d3.time.format("%d-%b-%y").parse;
 	//var parseDate = d3.time.format("%m/%y").parse;
@@ -96,20 +211,23 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 	
 	//genre filter
 	var genrename = "";
-	var brush_extent = [[ 1, 10],[ 1, 10]];
+	// var brush_extent = [[ 1, 10],[ 1, 10]];
 /* 
  * value accessor - returns the value to encode for a given data object.
  * scale - maps value to a visual display encoding, such as a pixel position.
  * map function - maps from data value to display value
  * axis - sets up axis
  */ 
+ var playButton = d3.select("#play-button");
+ var resetButton = d3.select("#reset-button");
+
 
 	// setup x 
 	var xValue = function(d) { 
 		// console.log(d.num)
 		return d.num;}, // data -> value
 	
-    xScale = d3.time.scale().range([0,width-50]);
+    xScale = d3.scale.linear().range([0,width]).nice();
     xMap = function(d) { return xScale(xValue(d));}, // data -> display
     xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 
@@ -133,11 +251,11 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
     .on("zoom",zoomed);
 
 
-	var brush = d3.svg.brush()
-      .x(xScale)
-      .y(yScale)
-      .on("brush", brushmove)
-      .on("brushend", brushend);
+	// var brush = d3.svg.brush()
+    //   .x(xScale)
+    //   .y(yScale)
+    //   .on("brush", brushmove)
+    //   .on("brushend", brushend);
 
 	d3.select("button").on("click", reset);
 	function reset() {
@@ -145,7 +263,7 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 		runtime_min = 0;
 		runtime_max = 250;
 		genrename = "";
-		brush_extent = [[ 1, 10],[ 100, 10]];
+		// brush_extent = [[ 1, 10],[ 100, 10]];
 		
 		scatterplot.call(zoom
 			.x(xScale.domain([0, 200]))
@@ -192,6 +310,12 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 			// 					(brush_extent[0][1] > d.rate || d.rate > brush_extent[1][1] ||
 			// 					brush_extent[0][0] > d.ReleaseDate || d.ReleaseDate > brush_extent[1][0]); })
 			.style("opacity", .5)
+
+        .transition()
+			  .duration(330)
+
+
+
 			.attr("r", function(d){
 				yValue2 = d[year.toString()]
 				radius="3px"
@@ -199,11 +323,13 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 					radius="0px"
 				}
 				xMap2 =  xScale(d.num) // data -> display
-				if (xMap2>width-30){
+				if (xMap2>width-50){
 					radius="0px"
 				}
 
 				return radius;})
+
+      
 			.attr("cy", function(d){
 				// console.log(year)
 				yValue2 = d[year.toString()]
@@ -232,9 +358,12 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 
 			dot
 			.filter(function(d) { 
-				console.log(genrename);
 				return d.genre == genrename
 			})
+      .transition()
+			  .duration(330)
+
+
 			.style("opacity", .5)
 			.attr("r", function(d){
 				yValue2 = d[year.toString()]
@@ -243,7 +372,7 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 					radius="0px"
 				}
 				xMap2 =  xScale(d.num) // data -> display
-				if (xMap2>width-30){
+				if (xMap2>width-50){
 					radius="0px"
 				}
 				return radius;})
@@ -264,6 +393,10 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 		}
 
 			histo.selectAll("rect")
+      .transition()
+			  .duration(430)
+
+
 			.attr("y", function(d) { 
 				year2 ="_"+ year.toString()
 				kt=yearR(d.x,year2)
@@ -308,27 +441,27 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 	);
 
   // Highlight the selected circles.
-  function brushmove(d) {
-   brush_extent = brush.extent();
-   filter_scatterplot(); 
-   detail_table.draw();
-  }
+//   function brushmove(d) {
+//    brush_extent = brush.extent();
+//    filter_scatterplot(); 
+//    detail_table.draw();
+//   }
 
 
-  // If the brush is empty, select all circles.
-  function brushend() {
-  if (!d3.event.sourceEvent) return; 
-    if (brush.empty()){
-	 brush_extent = [[ 1, 10],[ 100, 10]];
-	 filter_scatterplot(); 
-	 detail_table.draw();
-	}
-  }
+//   // If the brush is empty, select all circles.
+//   function brushend() {
+//   if (!d3.event.sourceEvent) return; 
+//     if (brush.empty()){
+// 	 brush_extent = [[ 1, 10],[ 100, 10]];
+// 	 filter_scatterplot(); 
+// 	 detail_table.draw();
+// 	}
+//   }
 	
 	// add the graph canvas to the body of the webpage
 	var svg = d3.select("#scatterplot").append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("height", height + margin.top + margin.bottom+176)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 	;
@@ -344,7 +477,7 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 	
 	scatterplot.append("g")
     .attr("class", "brush")
-    .call(brush);
+    // .call(brush);
 	
     var rect = scatterplot.append("rect")
     .attr("width", width)
@@ -356,16 +489,115 @@ margin2 = {top: 580, right: 10, bottom: 35, left: 40},
 	var tooltip = d3.select("#scatterplot").append("svg")
     .attr("class", "tooltip")
     .style("opacity", 0);
-
+    var startDate = new Date("1995-01-01"),
+        endDate = new Date("2018-12-01");
 var genreR_data = [];
+var moving = false;
+var currentValue = 0;
+var targetValue = width-60;
+var formatDateIntoYear = d3v4.timeFormat("%Y");
+var formatDate = d3v4.timeFormat("%b %Y");
+var parseDate = d3v4.timeParse("%m/%d/%y");
+var x = d3v4.scaleTime()
+    .domain([startDate, endDate])
+    .range([0, targetValue])
+    .clamp(true);
+
+function step() {
+
+  update(x.invert(currentValue));
+  currentValue = currentValue + (targetValue/330);
+  if (currentValue > targetValue) {
+    moving = false;
+    currentValue = 0;
+    clearInterval(timer);
+    // timer = 0;
+    playButton.text("Play");
+  
+    // console.log("Slider moving: " + moving);
+  }
+}
+function update(h) {
+  // update position and text of label according to slider scale
+  handle.attr("cx", x(h));
+  label
+    .attr("x", x(h))
+    .text(formatDate(h));
+// console.log(currentValue)
+goValue=250/1140*currentValue
+filter_scatterplot(); 
+
+}
+
+var svg2 = d3v4.select("#scatterplot")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom+80); 
+
+var slider = svg2.append("g")
+    .attr("class", "slider")
+    .attr("transform", "translate(" + margin.left + "," + 50 + ")")
+    
+// treemap code here
+slider.append("line")
+    .attr("class", "track")
+    .attr("x1", x.range()[0])
+    .attr("x2", x.range()[1])
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "track-inset")
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "track-overlay")
+    .call(d3v4.drag()
+        .on("start.interrupt", function() { 
+            slider.interrupt(); })
+        .on("start drag", function() {
+          currentValue = d3v4.event.x;
+          update(x.invert(currentValue)); 
+        })
+    );
+    
+    
+slider.insert("g", ".track-overlay")
+    .attr("class", "ticks")
+    .attr("transform", "translate(0," + 18 + ")")
+  .selectAll("text")
+    .data(x.ticks(10))
+    .enter()
+    .append("text")
+    .attr("x", x)
+    .attr("y", 10)
+    .attr("text-anchor", "middle")
+    .text(function(d) { return formatDateIntoYear(d); });
+
+var handle = slider.insert("circle", ".track-overlay")
+    .attr("class", "handle")
+    .attr("r", 9);
+
+var label = slider.append("text")  
+    .attr("class", "label")
+    .attr("text-anchor", "middle")
+    .style("font-family", "avenir" ) 
+    .text(formatDate(startDate))
+    .attr("transform", "translate(0," + (-25) + ")")
+var t = d3v4.transition()
+      .duration(750);
+var genreType= "All genres"
+var myText =svg.append("text")
+        .attr("x", (width / 4))             
+        .attr("y", 760)
+        .attr("text-anchor", "middle")  
+        .style("font-family", "avenir" ) 
+        .style("font-size", "20px") 
+        .text(function(d) { return "Now Plotting: "+genreType })
 
 
+function redrawText(genreType) {
+    myText
+    .text(function(d) { return "Now Plotting: "+genreType })
+}
 
 
 d3.csv("test.csv", function(error, data) {
-	
-
-
 	
 	d3.csv("Genres_Rate_95to18.csv", function(error2, data2) {
 		data2.forEach(function(d) {
@@ -399,17 +631,22 @@ d3.csv("test.csv", function(error, data) {
   svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
-      .call(xAxis)
+      .style("font-family", "avenir" ) 
+      .call(xAxis
+       .ticks(10, 0))
     .append("text")
       .attr("class", "label")
-      .attr("x", width-10)
+      .attr("x", width+10)
       .attr("y", -6)
       .style("text-anchor", "end")
+      .style("font-family", "avenir" ) 
       .text("Popularity");
+  console.log(xAxis)
 
   // y-axis
   svg.append("g")
       .attr("class", "y axis")
+      .style("font-family", "avenir" ) 
       .call(yAxis)
      .append("text")
       .attr("class", "label")
@@ -417,6 +654,7 @@ d3.csv("test.csv", function(error, data) {
       .attr("y", 6)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
+      .style("font-family", "avenir" ) 
       .text("Rate");
 
   // draw dots
@@ -427,9 +665,9 @@ d3.csv("test.csv", function(error, data) {
       //.attr("class", "dot")
       .attr("r", function(d){
 				return "3px";
-	  })
+	  }) 
       .attr("cx", xMap)
-      .attr("cy", yMap)	  
+      .attr("cy", yMap)	 
       .style("fill", function(d) { return color(cValue(d));}) 
 	  .style("opacity", .5)
       .on("mouseover", function(d) {
@@ -488,37 +726,49 @@ d3.csv("test.csv", function(error, data) {
 			.attr("y1",height2-10)
 			.attr("x2",genre_his_data.length * rect_step)
 			.attr("y2",height2-10);
-			
+	
+  var opacity=0.5
+
 	histo.append("rect")
 			.attr("x", 1)
-			.style("opacity", .5)
+			.style("opacity", opacity)
 			.attr("y", function(d) { 
-			 return height2-20 - 5; })
+                kt=yearR(d.x,"_2017")
+			 return height2-10 - 30*kt; })
+			
 			.attr("width", function(d,i){
 				return rect_step - 2; 
 			})
 			.attr("height", function(d){
-				return 5;
+                kt=yearR(d.x,"_2017")
+				return 30*kt;
 			})
 			.attr("fill", function(d){return color(d.x);})
-			/* .on("mouseover", function(d) {
-				dot
-				.filter(function(d) { return d.genre == d.x; })
-				.style("opacity", 1);
-				dot
-				.filter(function(d) { return d.genre != d.x; })
-				.style("opacity", .5);
-			})
-			.on("mouseout", function(d) {
-				filter_scatterplot();
-			;
-			})*/
-			.on("click", function(d){
-				genrename = d.x;
-				filter_scatterplot(); 
-				
-	  });
+
+      .on("mouseover", handleMouseOver)
+      .on("mouseout", handleMouseOut)
 	
+			.on("click", function(d){
+				genrename = d.x
+                console.log(genrename)
+                genreType=genrename.toString()
+                // update2(genreType)
+                redrawText(genreType)
+				filter_scatterplot(); 
+	  });
+
+    function handleMouseOver(d) {  // Add interactivity
+
+// Use D3 to select element, change color and size
+d3.select(this).style("opacity", 0.8)
+
+}
+
+function handleMouseOut(d, i) {
+// Use D3 to select element, change color back to normal
+d3.select(this).style("opacity", 0.5)
+
+}
 	//绘制文字
 	histo.append("text")
 			.attr("font-size","10px")
@@ -531,41 +781,36 @@ d3.csv("test.csv", function(error, data) {
 				return d.x;
 			});
 
+    playButton
+    .on("click", function() {
+    var button = d3.select(this);
+    if (button.text() == "Pause") {
+      moving = false;
+      clearInterval(timer);
+      // timer = 0;
+      button.text("Play");
+    } else {
+      moving = true;
+      timer = setInterval(step, 100);
+      button.text("Pause");
+    }
+    
+    // console.log("Slider moving: " + moving);
+  })
 
-//  d3.select('#slider7').call(d3.slider().axis(true).min(1995).max(2018).step(1));
+   resetButton
+    .on("click", function() {
+    var button = d3.select(this);
+    genrename=""
+    genreType= "All genres"
+    redrawText(genreType)
+    // console.log("Slider moving: " + moving);
+  })
+  
+  
 
-var timeSlider=  d3.select('#slider7').call(d3.slider().axis(true).min(1995).max(2018).step(1));
 
-timeSlider.call(d3.slider().on("slide", function(evt, value) {
-  // `value` is the percentage travelled on the slider
-  // Selected year will therefore be value * (max - min) + min
-  var year = value/100;
-  goValue=year*250;
-	filter_scatterplot(); 
-//   console.log("The slider's current value is:" + goValue);
-}));
-	
-	// $(document).ready(function() {
-    // detail_table = $('#movietable').DataTable( {
-    //     data: dataSet,
-    //     columns: [
-    //         { title: "Name" },
-    //         { title: "Rate" },
-	// 		{ title: "Boxoffice" },
-    //         { title: "Runtime" },
-    //         { title: "Release Date" },
-    //         { title: "Genre" }
-    //     ]
-	// });
-	//   $('#movietable')
-    //     .on( 'mouseenter', 'td', function () {
-    //         var colIdx = detail_table.cell(this).index().row;
-	// 		console.log(colIdx);
-    //         //$( detail_table.column( colIdx ).nodes() ).addClass( 'highlight' );
-    //     } );
-		
-	// });
-	
+
 });
 });
 
