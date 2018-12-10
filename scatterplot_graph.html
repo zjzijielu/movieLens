@@ -745,6 +745,7 @@
                         .selectAll("line")
                         .data(graph.links)
                         .enter().append("line")
+                        .attr("opacity", 0)
                         .attr("stroke-width", function(d) { return Math.sqrt(d.value)/5; });
 
                     function initialization(n){
@@ -766,7 +767,7 @@
                             return Math.log(d.popularity)
                         })
                         .attr("fill", function(d) { return color(d.genre); })
-
+                        .attr("opacity", 1)
                         .call(d3v4.drag()
                             .on("start", dragstarted)
                             .on("drag", dragged)
@@ -785,6 +786,7 @@
                             d3v4.select(this) 
                                 .transition()
                                 .duration(500)
+                                .attr("opacity", 1)
                                 .attr('r', 8);
                         })
                         .on("mouseout", function (d){
@@ -813,13 +815,13 @@
                         link.filter(function(d){
                             //console.log(id)
                             //console.log(d.target.id, d.source.id)
-                            return (d.target.id != id && d.source.id != id)
+                            return (d.target.id == id || d.source.id == id)
                         })
-                        .attr("stroke-width", 0)
+                        .attr("opacity", 1)
                         node.filter(function(i){
                             return i.display != 2
                         })
-                        .attr("r", 0)
+                        .attr("opacity", 0.3)
                         node.filter(function(i){
                             recommend_film.push(i.id)
                         })
@@ -828,11 +830,13 @@
                     d3.selectAll("input[name='uncheck all']").on('click', initial);
 
                     function initial(){
-                        link.attr("stroke-width", function(d) { return Math.sqrt(d.value)/5; });
+                        link.attr("stroke-width", function(d) { return Math.sqrt(d.value)/5; })
+                            .attr("opacity", 0);
                         node.filter(function(i){
                             i.display = 1
                             return i.r != 3
                         })
+                        .attr("opacity", 1)
                         .attr("r", function(d){
                             return Math.log(d.popularity)
                         })
